@@ -5,5 +5,5 @@ __pycache__/
 .hypothesis/
 .venv/
 *.egg-info/
-build/index.sqlite
+challange/build/
 .venv/
