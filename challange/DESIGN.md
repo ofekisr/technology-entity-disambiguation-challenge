@@ -15,13 +15,13 @@ Output: `Resolution{id, canonical_name, vendor, category, confidence, status, al
 
 | Topic | Decision | Trade-off |
 |---|---|---|
-| Precision vs recall | Precision first; base by match type canonical 1.0 > manual 0.97 > generated 0.9 > weak-unique 0.8 > fuzzy = score (D-14, D-27) | Some true variants return `ambiguous` / `no_match` |
-| Decision rule | `resolved` iff `s1 ≥ T_high (0.75)` and `margin ≥ M (0.15)`; `ambiguous` iff `s1 ≥ T_low (0.5)`; else `no_match` (D-22, D-28) | Threshold change = new version |
+| Precision vs recall | Precision first; initial base by match type canonical 1.0 > manual 0.97 > generated 0.9 > weak-unique 0.8 > fuzzy = score (D-14, D-27) | Some true variants return `ambiguous` / `no_match` |
+| Decision rule | initial: `resolved` iff `s1 ≥ T_high (0.75)` and `margin ≥ M (0.15)`; `ambiguous` iff `s1 ≥ T_low (0.5)`; else `no_match` (D-22, D-28) | Threshold change = new version |
 | Ambiguity | Product-only and ≤ 3-char aliases are weak; a weak alias on > 1 entity returns `ambiguous` + alternatives (`Sentinel`); a vendor in the input is a hint (`Microsoft Sentinel`) (D-09, D-19, D-29) | Callers handle a third status |
 | Hierarchy | Canonical vendor = operating brand, `parent_vendor_id` is metadata; `Amazon ≠ AWS`, `AWS ≠ AWS EKS` (D-10, D-11, D-32) | Build emits parent × product aliases; no runtime tree walk (D-44) |
 | Typos | Trigram candidates + Levenshtein ≤ 2; ≤ 3 chars exact only (D-26) | Misses heavier misspellings |
-| Unknowns | `no_match`, confidence 0, queued for review; runtime never mints ids (D-47) | Coverage grows only via review |
-| Update strategy | Source files in git, PR = review, idempotent upserts with provenance; build → validate → eval gate → atomic snapshot swap (D-12, D-13, D-36) | Minutes to ship an alias |
+| Unknowns | `no_match`, confidence 0, queued for review; runtime never mints ids (D-47, assumption [CONFIRM]) | Coverage grows only via review |
+| Update strategy | Source files in git, PR = review, idempotent upserts with provenance; build → validate → eval gate → atomic snapshot swap (D-12, D-13, D-36) | A rebuild per change |
 | Idempotency | `index_version` = content hash; ledger key = `(input, hints, filters, index_version)`; tie-break `(score desc, entity_id asc)` (D-16, D-22, D-31) | Ledger grows with traffic |
 
 ## Data structures
@@ -33,7 +33,7 @@ Output: `Resolution{id, canonical_name, vendor, category, confidence, status, al
 
 ## Scale to 100k+
 
-- **Latency:** exact alias O(1); candidates from postings of rare tokens, top-K = 20 scored; in-process p99 target < 5 ms (D-39).
+- **Latency:** exact alias O(1); candidates from postings of rare tokens, top-K = 20 scored (D-28); in-process p99 target < 5 ms (D-39).
 - **Memory:** ~1M aliases fit one SQLite file; in-memory exact-alias dict ≈ 150–250 MB [CONFIRM]; beyond that, SQLite-backed lookups (D-35).
 - **Maintainability:** per-vendor files + CODEOWNERS, validator in CI, replay diff per version, traffic-weighted health (D-25, D-36, D-42).
 - **Build:** offline, incremental; enrichment plugins only propose changesets (D-24, D-37).
