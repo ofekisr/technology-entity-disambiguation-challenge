@@ -8,6 +8,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from src.constants import (
+    BIN_EDGE_DECIMALS,
+    FULL_CONFIDENCE,
     CALIBRATION_BINS,
     EXACT_ONLY_MAX_LEN,
     STRENGTH_RANK,
@@ -178,7 +180,10 @@ def build_idf(postings: dict[str, tuple[str, ...]]) -> dict[str, float]:
 
 def identity_calibration() -> tuple[tuple[float, float, float], ...]:
     width = 1.0 / CALIBRATION_BINS
-    return tuple((round(i * width, 2), round((i + 1) * width, 2), 1.0) for i in range(CALIBRATION_BINS))
+    return tuple(
+        (round(i * width, BIN_EDGE_DECIMALS), round((i + 1) * width, BIN_EDGE_DECIMALS), FULL_CONFIDENCE)
+        for i in range(CALIBRATION_BINS)
+    )
 
 
 def content_hash(tables: Tables) -> str:

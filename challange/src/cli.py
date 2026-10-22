@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from src.build import build_tables, load_snapshot, validate, write_snapshot
-from src.constants import DATA_DIR
+from src.constants import DATA_DIR, RSS_DECIMALS
 from src.eval import evaluate
 from src.models import AliasRow, Filters, Hints, load_sources
 from src.normalize import normalize
@@ -21,7 +21,7 @@ ALIAS_FIELDS = ("alias", "entity_id", "strength", "source", "actor", "added_at",
 
 def rss_mb() -> float:
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    return round(peak / (BYTES_PER_MB if sys.platform == "darwin" else KB_PER_MB), 1)
+    return round(peak / (BYTES_PER_MB if sys.platform == "darwin" else KB_PER_MB), RSS_DECIMALS)
 
 
 def cmd_build(args: argparse.Namespace) -> int:
