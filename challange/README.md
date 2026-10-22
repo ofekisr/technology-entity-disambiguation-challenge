@@ -1,7 +1,7 @@
 # Technology Entity Resolver
 
 Deterministic, dictionary-first resolver that maps technology names from threat reports to stable canonical ids.
-Design: [DESIGN.md](DESIGN.md) · diagrams: [architecture](docs/architecture.md), [resolve flow](docs/resolve-flow.md).
+Design: [docs/DESIGN.md](docs/DESIGN.md) · diagrams: [architecture](docs/architecture.md), [resolve flow](docs/resolve-flow.md).
 
 ## Run (Python 3.12)
 

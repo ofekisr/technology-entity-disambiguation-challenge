@@ -1,6 +1,6 @@
 # Technology Entity Disambiguation — Design
 
-Diagrams: [architecture](docs/architecture.md) · [resolve flow](docs/resolve-flow.md). D-xx = locked decision ids.
+Diagrams: [architecture](architecture.md) · [resolve flow](resolve-flow.md). D-xx = locked decision ids.
 
 ## Approach
 
@@ -42,6 +42,7 @@ Output: `Resolution{id, canonical_name, vendor, category, confidence, status, al
 
 - **Gold set:** 25 hand cases + leave-one-out over aliases + synthetic typos in code; 300–500 hand-labeled in production (D-38).
 - **Metrics (`make eval`):** precision on resolved (gate ≥ 0.98), coverage (target ≥ 0.90), F1, ambiguous rate, p50 / p99 latency, cost per 1M, threshold sweep, 10-bin reliability table + ECE (D-38, D-40).
+- **Measured (seed, 22-10-26):** 178 entities, 481 aliases, 183 cases: precision 1.00, coverage 0.79 (leave-one-out misses fall to `no_match`), p50 0.03 ms, p99 0.12 ms.
 - **Calibration:** bins frozen in the snapshot; fit on the hand-labeled dev set, since leave-one-out inflates precision (D-40).
 - **Production:** regression gate in CI; health SLOs unresolved < 5 %, ambiguous < 3 %, tier-1 precision ≥ 99 % [CONFIRM] (D-25, D-39).
 - **Stubbed:** durable ledger, review queue, monitoring, plugins, real-time overlay (D-30, D-43).
