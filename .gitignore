@@ -1,0 +1,8 @@
+.claude/settings.local.json
+*.bak*
+__pycache__/
+.pytest_cache/
+.hypothesis/
+.venv/
+*.egg-info/
+build/index.sqlite
