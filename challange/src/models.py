@@ -1,5 +1,8 @@
+import csv
 from datetime import datetime
+from pathlib import Path
 
+import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.constants import NO_CONFIDENCE, Status, Strength
@@ -84,3 +87,69 @@ class Resolution(Frozen):
             status=Status.NO_MATCH,
             index_version=index_version,
         )
+
+
+class Thresholds(Frozen):
+    t_high: float
+    t_low: float
+    margin: float
+    top_k: int
+    hint_bonus: float
+    precision_target: float
+    coverage_target: float
+
+
+class Sources(Frozen):
+    categories: tuple[CategoryLeaf, ...]
+    vendors: tuple[VendorRow, ...]
+    entities: tuple[EntityRow, ...]
+    aliases: tuple[AliasRow, ...]
+    thresholds: Thresholds
+
+
+def load_categories(path: Path) -> tuple[CategoryLeaf, ...]:
+    groups: dict[str, dict[str, str]] = yaml.safe_load(path.read_text())
+    return tuple(
+        CategoryLeaf(id=leaf_id, label=label, group=group)
+        for group, leaves in groups.items()
+        for leaf_id, label in leaves.items()
+    )
+
+
+def load_vendors(path: Path) -> tuple[VendorRow, ...]:
+    with path.open(newline="") as handle:
+        return tuple(_vendor_row(row) for row in csv.DictReader(handle))
+
+
+def _vendor_row(row: dict[str, str]) -> VendorRow:
+    return VendorRow(
+        vendor_id=row["vendor_id"],
+        name=row["name"],
+        parent_vendor_id=row["parent_vendor_id"] or None,
+        flagship_entity_id=row["flagship_entity_id"] or None,
+        aliases=tuple(alias for alias in row["aliases"].split("|") if alias),
+    )
+
+
+def load_entities(path: Path) -> tuple[EntityRow, ...]:
+    lines = path.read_text().splitlines()
+    return tuple(EntityRow.model_validate_json(line) for line in lines if line.strip())
+
+
+def load_aliases(path: Path) -> tuple[AliasRow, ...]:
+    with path.open(newline="") as handle:
+        return tuple(AliasRow.model_validate(_drop_empty(row)) for row in csv.DictReader(handle))
+
+
+def _drop_empty(row: dict[str, str]) -> dict[str, str]:
+    return {key: value for key, value in row.items() if value != ""}
+
+
+def load_sources(data_dir: Path) -> Sources:
+    return Sources(
+        categories=load_categories(data_dir / "categories.yaml"),
+        vendors=load_vendors(data_dir / "vendors.csv"),
+        entities=load_entities(data_dir / "entities.jsonl"),
+        aliases=load_aliases(data_dir / "aliases.csv"),
+        thresholds=Thresholds.model_validate(yaml.safe_load((data_dir / "thresholds.yaml").read_text())),
+    )

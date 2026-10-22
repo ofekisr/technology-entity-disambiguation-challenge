@@ -1,0 +1,29 @@
+security:
+  edr: EDR
+  siem: SIEM
+  firewall: Firewall
+  iam: IAM
+  email-security: Email Security
+  vuln-scanner: Vulnerability Scanner
+cloud:
+  cloud-platform: Cloud Platform
+  cloud-service: Cloud Service
+infra:
+  os: OS
+  database: Database
+  web-server: Web Server
+  container: Container
+  network-device: Network Device
+dev:
+  library: Library
+  framework: Framework
+  language: Language
+  devtool: Dev Tool
+apps:
+  saas: SaaS
+  desktop-app: Desktop App
+  browser: Browser
+  cms: CMS
+other:
+  vendor: Vendor
+  uncategorized: Uncategorized

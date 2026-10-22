@@ -1,0 +1,7 @@
+t_high: 0.75
+t_low: 0.5
+margin: 0.15
+top_k: 20
+hint_bonus: 0.15
+precision_target: 0.98
+coverage_target: 0.90

@@ -1,0 +1,120 @@
+{"id": "aws/aws", "vendor_id": "aws", "product": "AWS", "category": "cloud-platform", "tier": 1, "cpe": null}
+{"id": "aws/eks", "vendor_id": "aws", "product": "EKS", "category": "cloud-service", "tier": 1, "cpe": null}
+{"id": "aws/s3", "vendor_id": "aws", "product": "S3", "category": "cloud-service", "tier": 1, "cpe": null}
+{"id": "aws/lambda", "vendor_id": "aws", "product": "Lambda", "category": "cloud-service", "tier": 1, "cpe": "amazon:aws_lambda"}
+{"id": "aws/ec2", "vendor_id": "aws", "product": "EC2", "category": "cloud-service", "tier": 1, "cpe": null}
+{"id": "aws/iam", "vendor_id": "aws", "product": "IAM", "category": "iam", "tier": 1, "cpe": null}
+{"id": "aws/cloudtrail", "vendor_id": "aws", "product": "CloudTrail", "category": "cloud-service", "tier": 2, "cpe": null}
+{"id": "aws/guardduty", "vendor_id": "aws", "product": "GuardDuty", "category": "cloud-service", "tier": 2, "cpe": null}
+{"id": "aws/rds", "vendor_id": "aws", "product": "RDS", "category": "database", "tier": 2, "cpe": null}
+{"id": "aws/ecs", "vendor_id": "aws", "product": "ECS", "category": "container", "tier": 2, "cpe": null}
+{"id": "aws/cloudfront", "vendor_id": "aws", "product": "CloudFront", "category": "cloud-service", "tier": 2, "cpe": null}
+{"id": "amazon/alexa", "vendor_id": "amazon", "product": "Alexa", "category": "saas", "tier": 3, "cpe": null}
+{"id": "amazon/kindle", "vendor_id": "amazon", "product": "Kindle", "category": "desktop-app", "tier": 3, "cpe": null}
+{"id": "microsoft/sentinel", "vendor_id": "microsoft", "product": "Sentinel", "category": "siem", "tier": 1, "cpe": "microsoft:azure_sentinel"}
+{"id": "microsoft/defender_for_endpoint", "vendor_id": "microsoft", "product": "Defender for Endpoint", "category": "edr", "tier": 1, "cpe": null}
+{"id": "microsoft/windows", "vendor_id": "microsoft", "product": "Windows", "category": "os", "tier": 1, "cpe": "microsoft:windows"}
+{"id": "microsoft/windows_server", "vendor_id": "microsoft", "product": "Windows Server", "category": "os", "tier": 1, "cpe": null}
+{"id": "microsoft/azure", "vendor_id": "microsoft", "product": "Azure", "category": "cloud-platform", "tier": 1, "cpe": null}
+{"id": "microsoft/entra_id", "vendor_id": "microsoft", "product": "Entra ID", "category": "iam", "tier": 1, "cpe": null}
+{"id": "microsoft/exchange_server", "vendor_id": "microsoft", "product": "Exchange Server", "category": "saas", "tier": 1, "cpe": "microsoft:exchange_server"}
+{"id": "microsoft/teams", "vendor_id": "microsoft", "product": "Teams", "category": "saas", "tier": 2, "cpe": null}
+{"id": "microsoft/visual_studio_code", "vendor_id": "microsoft", "product": "Visual Studio Code", "category": "devtool", "tier": 2, "cpe": null}
+{"id": "microsoft/copilot", "vendor_id": "microsoft", "product": "Copilot", "category": "saas", "tier": 2, "cpe": null}
+{"id": "microsoft/edge", "vendor_id": "microsoft", "product": "Edge", "category": "browser", "tier": 2, "cpe": null}
+{"id": "microsoft/sql_server", "vendor_id": "microsoft", "product": "SQL Server", "category": "database", "tier": 1, "cpe": null}
+{"id": "microsoft/dotnet", "vendor_id": "microsoft", "product": "Microsoft .NET", "category": "framework", "tier": 2, "cpe": null}
+{"id": "microsoft/iis", "vendor_id": "microsoft", "product": "IIS", "category": "web-server", "tier": 2, "cpe": null}
+{"id": "microsoft/sharepoint", "vendor_id": "microsoft", "product": "SharePoint", "category": "cms", "tier": 1, "cpe": null}
+{"id": "microsoft/outlook", "vendor_id": "microsoft", "product": "Outlook", "category": "desktop-app", "tier": 2, "cpe": null}
+{"id": "microsoft/intune", "vendor_id": "microsoft", "product": "Intune", "category": "iam", "tier": 2, "cpe": null}
+{"id": "github/github", "vendor_id": "github", "product": "GitHub", "category": "devtool", "tier": 1, "cpe": null}
+{"id": "github/copilot", "vendor_id": "github", "product": "Copilot", "category": "devtool", "tier": 2, "cpe": null}
+{"id": "github/actions", "vendor_id": "github", "product": "GitHub Actions", "category": "devtool", "tier": 2, "cpe": null}
+{"id": "google/cloud", "vendor_id": "google", "product": "Google Cloud", "category": "cloud-platform", "tier": 1, "cpe": null}
+{"id": "google/chrome", "vendor_id": "google", "product": "Chrome", "category": "browser", "tier": 1, "cpe": null}
+{"id": "google/kubernetes_engine", "vendor_id": "google", "product": "Kubernetes Engine", "category": "container", "tier": 2, "cpe": null}
+{"id": "google/android", "vendor_id": "google", "product": "Android", "category": "os", "tier": 1, "cpe": null}
+{"id": "google/workspace", "vendor_id": "google", "product": "Workspace", "category": "saas", "tier": 2, "cpe": null}
+{"id": "google/gmail", "vendor_id": "google", "product": "Gmail", "category": "saas", "tier": 2, "cpe": null}
+{"id": "google/chronicle", "vendor_id": "google", "product": "Chronicle", "category": "siem", "tier": 2, "cpe": null}
+{"id": "crowdstrike/falcon", "vendor_id": "crowdstrike", "product": "Falcon", "category": "edr", "tier": 1, "cpe": null}
+{"id": "sentinelone/sentinelone", "vendor_id": "sentinelone", "product": "SentinelOne", "category": "edr", "tier": 1, "cpe": null}
+{"id": "thales/sentinel", "vendor_id": "thales", "product": "Sentinel", "category": "devtool", "tier": 3, "cpe": null}
+{"id": "hashicorp/sentinel", "vendor_id": "hashicorp", "product": "Sentinel", "category": "devtool", "tier": 3, "cpe": null}
+{"id": "hashicorp/terraform", "vendor_id": "hashicorp", "product": "Terraform", "category": "devtool", "tier": 2, "cpe": null}
+{"id": "hashicorp/vault", "vendor_id": "hashicorp", "product": "Vault", "category": "iam", "tier": 2, "cpe": null}
+{"id": "falconry/falcon", "vendor_id": "falconry", "product": "Falcon", "category": "framework", "tier": 3, "cpe": "falconframework:falcon"}
+{"id": "f5/big-ip", "vendor_id": "f5", "product": "BIG-IP", "category": "network-device", "tier": 1, "cpe": null}
+{"id": "nginx/nginx", "vendor_id": "nginx", "product": "Nginx", "category": "web-server", "tier": 1, "cpe": "f5:nginx"}
+{"id": "apache/log4j", "vendor_id": "apache", "product": "Log4j", "category": "library", "tier": 1, "cpe": null}
+{"id": "apache/http_server", "vendor_id": "apache", "product": "Apache HTTP Server", "category": "web-server", "tier": 1, "cpe": null}
+{"id": "apache/tomcat", "vendor_id": "apache", "product": "Tomcat", "category": "web-server", "tier": 1, "cpe": null}
+{"id": "apache/struts", "vendor_id": "apache", "product": "Struts", "category": "framework", "tier": 2, "cpe": null}
+{"id": "apache/kafka", "vendor_id": "apache", "product": "Kafka", "category": "database", "tier": 2, "cpe": null}
+{"id": "apache/activemq", "vendor_id": "apache", "product": "ActiveMQ", "category": "library", "tier": 2, "cpe": null}
+{"id": "adobe/acrobat", "vendor_id": "adobe", "product": "Acrobat", "category": "desktop-app", "tier": 2, "cpe": null}
+{"id": "adobe/acrobat_reader", "vendor_id": "adobe", "product": "Acrobat Reader", "category": "desktop-app", "tier": 2, "cpe": null}
+{"id": "adobe/experience_manager", "vendor_id": "adobe", "product": "Experience Manager", "category": "cms", "tier": 2, "cpe": null}
+{"id": "adobe/experience_manager_forms", "vendor_id": "adobe", "product": "Experience Manager Forms", "category": "cms", "tier": 2, "cpe": null}
+{"id": "adobe/coldfusion", "vendor_id": "adobe", "product": "ColdFusion", "category": "framework", "tier": 2, "cpe": null}
+{"id": "adobe/photoshop", "vendor_id": "adobe", "product": "Photoshop", "category": "desktop-app", "tier": 3, "cpe": null}
+{"id": "atlassian/sourcetree", "vendor_id": "atlassian", "product": "Sourcetree", "category": "devtool", "tier": 3, "cpe": "torusknot:sourcetree"}
+{"id": "atlassian/confluence", "vendor_id": "atlassian", "product": "Confluence", "category": "saas", "tier": 1, "cpe": null}
+{"id": "atlassian/jira", "vendor_id": "atlassian", "product": "Jira", "category": "saas", "tier": 1, "cpe": null}
+{"id": "atlassian/bitbucket", "vendor_id": "atlassian", "product": "Bitbucket", "category": "devtool", "tier": 2, "cpe": null}
+{"id": "kubernetes/kubernetes", "vendor_id": "kubernetes", "product": "Kubernetes", "category": "container", "tier": 1, "cpe": null}
+{"id": "cpp/cpp", "vendor_id": "cpp", "product": "C++", "category": "language", "tier": 2, "cpe": null}
+{"id": "csharp/csharp", "vendor_id": "csharp", "product": "C#", "category": "language", "tier": 2, "cpe": null}
+{"id": "c/c", "vendor_id": "c", "product": "C", "category": "language", "tier": 2, "cpe": null}
+{"id": "python/python", "vendor_id": "python", "product": "Python", "category": "language", "tier": 2, "cpe": null}
+{"id": "nodejs/nodejs", "vendor_id": "nodejs", "product": "Node.js", "category": "framework", "tier": 2, "cpe": null}
+{"id": "oracle/database", "vendor_id": "oracle", "product": "Oracle Database", "category": "database", "tier": 1, "cpe": null}
+{"id": "oracle/java", "vendor_id": "oracle", "product": "Java", "category": "language", "tier": 1, "cpe": null}
+{"id": "oracle/weblogic", "vendor_id": "oracle", "product": "WebLogic Server", "category": "web-server", "tier": 1, "cpe": null}
+{"id": "oracle/mysql", "vendor_id": "oracle", "product": "MySQL", "category": "database", "tier": 1, "cpe": null}
+{"id": "paloaltonetworks/pan-os", "vendor_id": "paloaltonetworks", "product": "PAN-OS", "category": "firewall", "tier": 1, "cpe": null}
+{"id": "paloaltonetworks/cortex_xdr", "vendor_id": "paloaltonetworks", "product": "Cortex XDR", "category": "edr", "tier": 1, "cpe": null}
+{"id": "paloaltonetworks/prisma_cloud", "vendor_id": "paloaltonetworks", "product": "Prisma Cloud", "category": "cloud-service", "tier": 2, "cpe": null}
+{"id": "fortinet/fortigate", "vendor_id": "fortinet", "product": "FortiGate", "category": "firewall", "tier": 1, "cpe": null}
+{"id": "fortinet/fortios", "vendor_id": "fortinet", "product": "FortiOS", "category": "os", "tier": 1, "cpe": null}
+{"id": "cisco/asa", "vendor_id": "cisco", "product": "ASA", "category": "firewall", "tier": 1, "cpe": null}
+{"id": "cisco/ios_xe", "vendor_id": "cisco", "product": "IOS XE", "category": "network-device", "tier": 1, "cpe": null}
+{"id": "cisco/webex", "vendor_id": "cisco", "product": "Webex", "category": "saas", "tier": 2, "cpe": null}
+{"id": "okta/okta", "vendor_id": "okta", "product": "Okta", "category": "iam", "tier": 1, "cpe": null}
+{"id": "splunk/enterprise", "vendor_id": "splunk", "product": "Splunk Enterprise", "category": "siem", "tier": 1, "cpe": null}
+{"id": "elastic/elasticsearch", "vendor_id": "elastic", "product": "Elasticsearch", "category": "database", "tier": 1, "cpe": null}
+{"id": "elastic/kibana", "vendor_id": "elastic", "product": "Kibana", "category": "devtool", "tier": 2, "cpe": null}
+{"id": "ibm/qradar", "vendor_id": "ibm", "product": "QRadar", "category": "siem", "tier": 1, "cpe": null}
+{"id": "redhat/enterprise_linux", "vendor_id": "redhat", "product": "Enterprise Linux", "category": "os", "tier": 1, "cpe": null}
+{"id": "redhat/openshift", "vendor_id": "redhat", "product": "OpenShift", "category": "container", "tier": 2, "cpe": null}
+{"id": "vmware/esxi", "vendor_id": "vmware", "product": "ESXi", "category": "os", "tier": 1, "cpe": null}
+{"id": "vmware/vcenter_server", "vendor_id": "vmware", "product": "vCenter Server", "category": "devtool", "tier": 1, "cpe": null}
+{"id": "mozilla/firefox", "vendor_id": "mozilla", "product": "Firefox", "category": "browser", "tier": 2, "cpe": null}
+{"id": "mozilla/thunderbird", "vendor_id": "mozilla", "product": "Thunderbird", "category": "desktop-app", "tier": 3, "cpe": null}
+{"id": "linux/linux_kernel", "vendor_id": "linux", "product": "Linux Kernel", "category": "os", "tier": 1, "cpe": null}
+{"id": "canonical/ubuntu", "vendor_id": "canonical", "product": "Ubuntu", "category": "os", "tier": 2, "cpe": null}
+{"id": "postgresql/postgresql", "vendor_id": "postgresql", "product": "PostgreSQL", "category": "database", "tier": 1, "cpe": null}
+{"id": "mongodb/mongodb", "vendor_id": "mongodb", "product": "MongoDB", "category": "database", "tier": 2, "cpe": null}
+{"id": "redis/redis", "vendor_id": "redis", "product": "Redis", "category": "database", "tier": 2, "cpe": null}
+{"id": "docker/docker", "vendor_id": "docker", "product": "Docker", "category": "container", "tier": 1, "cpe": null}
+{"id": "openssl/openssl", "vendor_id": "openssl", "product": "OpenSSL", "category": "library", "tier": 1, "cpe": null}
+{"id": "jetbrains/intellij_idea", "vendor_id": "jetbrains", "product": "IntelliJ IDEA", "category": "devtool", "tier": 2, "cpe": null}
+{"id": "jetbrains/teamcity", "vendor_id": "jetbrains", "product": "TeamCity", "category": "devtool", "tier": 2, "cpe": null}
+{"id": "salesforce/salesforce", "vendor_id": "salesforce", "product": "Salesforce", "category": "saas", "tier": 2, "cpe": null}
+{"id": "slack/slack", "vendor_id": "slack", "product": "Slack", "category": "saas", "tier": 2, "cpe": null}
+{"id": "zoom/zoom", "vendor_id": "zoom", "product": "Zoom", "category": "saas", "tier": 2, "cpe": null}
+{"id": "wordpress/wordpress", "vendor_id": "wordpress", "product": "WordPress", "category": "cms", "tier": 2, "cpe": null}
+{"id": "drupal/drupal", "vendor_id": "drupal", "product": "Drupal", "category": "cms", "tier": 3, "cpe": null}
+{"id": "proofpoint/email_protection", "vendor_id": "proofpoint", "product": "Email Protection", "category": "email-security", "tier": 2, "cpe": null}
+{"id": "mimecast/email_security", "vendor_id": "mimecast", "product": "Mimecast Email Security", "category": "email-security", "tier": 2, "cpe": null}
+{"id": "tenable/nessus", "vendor_id": "tenable", "product": "Nessus", "category": "vuln-scanner", "tier": 1, "cpe": null}
+{"id": "qualys/vmdr", "vendor_id": "qualys", "product": "VMDR", "category": "vuln-scanner", "tier": 2, "cpe": null}
+{"id": "rapid7/insightvm", "vendor_id": "rapid7", "product": "InsightVM", "category": "vuln-scanner", "tier": 2, "cpe": null}
+{"id": "cloudflare/waf", "vendor_id": "cloudflare", "product": "Cloudflare WAF", "category": "firewall", "tier": 2, "cpe": null}
+{"id": "sophos/intercept_x", "vendor_id": "sophos", "product": "Intercept X", "category": "edr", "tier": 2, "cpe": null}
+{"id": "trendmicro/apex_one", "vendor_id": "trendmicro", "product": "Apex One", "category": "edr", "tier": 2, "cpe": null}
+{"id": "sap/netweaver", "vendor_id": "sap", "product": "NetWeaver", "category": "framework", "tier": 1, "cpe": null}
+{"id": "servicenow/servicenow", "vendor_id": "servicenow", "product": "ServiceNow", "category": "saas", "tier": 2, "cpe": null}
+{"id": "ivanti/connect_secure", "vendor_id": "ivanti", "product": "Connect Secure", "category": "network-device", "tier": 1, "cpe": null}
+{"id": "citrix/netscaler_adc", "vendor_id": "citrix", "product": "NetScaler ADC", "category": "network-device", "tier": 1, "cpe": null}
