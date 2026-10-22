@@ -1,6 +1,6 @@
 from src.build import Tables
 from src.constants import Status
-from src.models import Filters, Hints
+from src.models import Filters, Hints, Resolution
 from src.ports import InMemoryLedger, InMemoryReviewQueue, LedgerKey
 from src.resolver import Resolver, resolve
 
@@ -57,3 +57,37 @@ def test_module_level_resolve_carries_index_version() -> None:
     result = resolve("AWS")
     assert result.id == "aws/aws"
     assert len(result.index_version) > 0
+
+
+def test_four_char_token_accepts_one_edit_only(resolver: Resolver) -> None:
+    assert resolver.resolve("Jirq").id == "atlassian/jira"
+    assert resolver.resolve("Jiqq").status is Status.NO_MATCH
+
+
+def test_at_most_two_typo_tokens_are_corrected(resolver: Resolver) -> None:
+    found = resolver._corrections("crowdstrik falcn kuberntes".split())
+    assert found == {"crowdstrik": ("crowdstrike", 1 - 1 / 10), "falcn": ("falcon", 1 - 1 / 5)}
+
+
+class CountingLedger(InMemoryLedger):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keys: list[LedgerKey] = []
+
+    def record(self, key: LedgerKey, resolution: Resolution) -> None:
+        self.keys.append(key)
+        super().record(key, resolution)
+
+
+def test_filters_order_does_not_change_the_key(tables: Tables) -> None:
+    ledger = CountingLedger()
+    resolver = Resolver(tables, ledger=ledger)
+    resolver.resolve("Sentinel", filters=Filters(vendors=("thales", "hashicorp")))
+    resolver.resolve("Sentinel", filters=Filters(vendors=("hashicorp", "thales")))
+    assert len(ledger.keys) == 1
+
+
+def test_empty_input_is_not_queued(tables: Tables) -> None:
+    queue = InMemoryReviewQueue()
+    Resolver(tables, review_queue=queue).resolve("!!!")
+    assert queue.pending() == ()

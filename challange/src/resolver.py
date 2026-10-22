@@ -16,6 +16,10 @@ from src.constants import (
     LRU_MAXSIZE,
     MAX_ALTERNATIVES,
     MAX_TYPO_DISTANCE,
+    MAX_TYPO_TOKENS,
+    SHORT_TYPO_DISTANCE,
+    SHORT_TYPO_TOKEN_LEN,
+    CONFIDENCE_DECIMALS,
     STRENGTH_RANK,
     UNCATEGORIZED,
     Status,
@@ -54,7 +58,7 @@ class Resolver:
         self._cached = lru_cache(maxsize=LRU_MAXSIZE)(self._resolve_normalized)
 
     def resolve(self, name: str, *, hints: Hints | None = None, filters: Filters | None = None) -> Resolution:
-        return self._cached(normalize(name), self._canonical_hints(hints or Hints()), filters or Filters())
+        return self._cached(normalize(name), self._canonical_hints(hints or Hints()), _canonical_filters(filters))
 
     def _canonical_hints(self, hints: Hints) -> Hints:
         if hints.vendor is None:
@@ -69,7 +73,7 @@ class Resolver:
             return recorded
         result = self._compute(input_norm, hints, filters)
         self.ledger.record(key, result)
-        if result.status is Status.NO_MATCH:
+        if result.status is Status.NO_MATCH and input_norm:
             self.review_queue.enqueue(input_norm, self.tables.index_version)
         return result
 
@@ -91,8 +95,9 @@ class Resolver:
         vendor_id, residue = self._decompose(input_norm.split())
         if vendor_id and hints.vendor is None:
             hints = Hints(vendor=vendor_id, category=hints.category)
-        weighted = dict(self._correct(token) for token in input_norm.split())
-        required = {self._correct(token)[0] for token in residue} if vendor_id else set()
+        corrections = self._corrections(input_norm.split())
+        weighted = dict(corrections.get(token, (token, EXACT_QUALITY)) for token in input_norm.split())
+        required = {corrections.get(token, (token, EXACT_QUALITY))[0] for token in residue} if vendor_id else set()
         scores = self._candidate_scores(weighted, required, filters)
         top = sorted(scores.items(), key=lambda item: (-item[1], item[0]))[: self.tables.thresholds.top_k]
         return [(score + self._bonus(entity_id, hints), entity_id) for entity_id, score in top]
@@ -104,15 +109,23 @@ class Resolver:
                 return vendor_id, tokens[size:]
         return None, tokens
 
-    def _correct(self, token: str) -> tuple[str, float]:
+    def _corrections(self, tokens: list[str]) -> dict[str, tuple[str, float]]:
+        found: dict[str, tuple[str, float]] = {}
+        for token in tokens:
+            corrected = self._correct(token)
+            if corrected and len(found) < MAX_TYPO_TOKENS:
+                found[token] = corrected
+        return found
+
+    def _correct(self, token: str) -> tuple[str, float] | None:
         if token in self.tables.idf or len(token) <= EXACT_ONLY_MAX_LEN:
-            return token, EXACT_QUALITY
+            return None
         candidates = {match for gram in trigrams(token) for match in self._trigram_index.get(gram, ())}
         ranked = sorted((Levenshtein.distance(token, match), match) for match in candidates)
-        if not ranked or ranked[0][0] > MAX_TYPO_DISTANCE:
-            return token, EXACT_QUALITY
+        if not ranked or ranked[0][0] > _max_distance(token):
+            return None
         distance, match = ranked[0]
-        return match, EXACT_QUALITY - distance / max(len(token), len(match))
+        return match, EXACT_QUALITY - distance / len(token)
 
     def _candidate_scores(self, weighted: WeightedTokens, required: set[str], filters: Filters) -> dict[str, float]:
         scores: dict[str, float] = defaultdict(float)
@@ -127,8 +140,8 @@ class Resolver:
         return scores
 
     def _jaccard(self, weighted: WeightedTokens, alias_tokens: set[str]) -> float:
-        common = sum(self._idf(token) * quality for token, quality in weighted.items() if token in alias_tokens)
-        union = sum(self._idf(token) for token in set(weighted) | alias_tokens)
+        common = sum(self._idf(token) * weighted[token] for token in sorted(weighted) if token in alias_tokens)
+        union = sum(self._idf(token) for token in sorted(set(weighted) | alias_tokens))
         return common / union if union else 0.0
 
     def _idf(self, token: str) -> float:
@@ -172,7 +185,7 @@ class Resolver:
         shown = ranked[:MAX_ALTERNATIVES]
         total = sum(score for score, _ in shown)
         alternatives = tuple(
-            Alternative(id=entity_id, canonical_name=self.tables.entities[entity_id].canonical_name, confidence=round(score / total, 4))
+            Alternative(id=entity_id, canonical_name=self.tables.entities[entity_id].canonical_name, confidence=round(score / total, CONFIDENCE_DECIMALS))
             for score, entity_id in shown
         )
         empty = Resolution.no_match(self.tables.index_version)
@@ -182,7 +195,7 @@ class Resolver:
     def _calibrate(self, score: float) -> float:
         capped = min(score, FULL_CONFIDENCE)
         scale = next((s for low, high, s in self.tables.calibration if low <= capped < high), FULL_CONFIDENCE)
-        return round(min(capped * scale, FULL_CONFIDENCE), 4)
+        return round(min(capped * scale, FULL_CONFIDENCE), CONFIDENCE_DECIMALS)
 
     def _build_trigram_index(self) -> dict[str, tuple[str, ...]]:
         index: dict[str, set[str]] = defaultdict(set)
@@ -191,6 +204,16 @@ class Resolver:
                 for gram in trigrams(token):
                     index[gram].add(token)
         return {gram: tuple(sorted(tokens)) for gram, tokens in index.items()}
+
+
+def _max_distance(token: str) -> int:
+    return SHORT_TYPO_DISTANCE if len(token) == SHORT_TYPO_TOKEN_LEN else MAX_TYPO_DISTANCE
+
+
+def _canonical_filters(filters: Filters | None) -> Filters:
+    chosen = filters or Filters()
+    return chosen.model_copy(update={"vendors": tuple(sorted(set(chosen.vendors))),
+                                     "categories": tuple(sorted(set(chosen.categories)))})
 
 
 def snapshot_path() -> Path:
