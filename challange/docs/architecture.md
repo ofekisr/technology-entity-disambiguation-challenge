@@ -16,7 +16,7 @@ flowchart LR
         direction TB
         UPD["idx add-alias / PR<br/>idempotent upsert + provenance (D-36)"]
         PLUG["Enrichment plugins<br/>propose changesets (D-24, D-37)"]:::stub
-        BUILD["idx build<br/>ingest → generate aliases (D-44) → validate<br/>→ IDF / postings → calibrate → eval gate"]
+        BUILD["idx build<br/>ingest → generate aliases (D-44) → validate<br/>→ IDF / postings → calibrate → eval gate<br/>→ replay ledger diff (D-31)"]
         EVAL["Eval harness<br/>gold set, sweep, reliability (D-38, D-40)"]
     end
 

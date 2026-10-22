@@ -11,7 +11,7 @@ flowchart TD
     CACHE -->|no| EXACT{"Exact alias?"}
     EXACT -->|"one entity"| BASE["Base by match type (D-27)<br/>canonical 1.0 · manual 0.97 · generated 0.9 · weak 0.8"]
     EXACT -->|"several entities (weak)"| HINTS["Hint bonus +0.15 (D-29)"]
-    EXACT -->|miss| DEC["Decompose: vendor longest-prefix<br/>vendor = inferred hint, residue must match (D-19, D-44)"]
+    EXACT -->|miss| DEC["Decompose: vendor longest-prefix<br/>vendor = inferred hint, residue must match (D-19, D-44)<br/>own products first; never ancestors"]
     DEC --> CAND["Candidate retrieval (D-20, D-26)<br/>postings of input tokens;<br/>typo: trigram vocab + Levenshtein ≤ 2, tokens > 3 chars"]
     CAND --> SCORE["Score (D-21)<br/>IDF-weighted token-set Jaccard<br/>+ coverage penalty; top-K"]
     SCORE --> HINTS
