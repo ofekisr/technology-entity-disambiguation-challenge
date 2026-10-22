@@ -1,0 +1,37 @@
+{"input": "AWS", "expected_id": "aws/aws", "expected_status": "resolved", "kind": "exact"}
+{"input": "Amazon Web Services", "expected_id": "aws/aws", "expected_status": "resolved", "kind": "exact"}
+{"input": "AWS Cloud", "expected_id": "aws/aws", "expected_status": "resolved", "kind": "exact"}
+{"input": "AWS EKS", "expected_id": "aws/eks", "expected_status": "resolved", "kind": "exact"}
+{"input": "Amazon EKS", "expected_id": "aws/eks", "expected_status": "resolved", "kind": "exact"}
+{"input": "Amazon Elastic Kubernetes Service", "expected_id": "aws/eks", "expected_status": "resolved", "kind": "exact"}
+{"input": "EKS", "expected_id": "aws/eks", "expected_status": "resolved", "kind": "exact"}
+{"input": "Amazon", "expected_id": "amazon/*", "expected_status": "resolved", "kind": "hard-negative"}
+{"input": "AWS Foo", "expected_id": null, "expected_status": "no_match", "kind": "unknown"}
+{"input": "Sentinel", "expected_id": null, "expected_status": "ambiguous", "kind": "near-collision"}
+{"input": "Microsoft Sentinel", "expected_id": "microsoft/sentinel", "expected_status": "resolved", "kind": "near-collision"}
+{"input": "Azure Sentinel", "expected_id": "microsoft/sentinel", "expected_status": "resolved", "kind": "near-collision"}
+{"input": "Sentinel SIEM", "expected_id": "microsoft/sentinel", "expected_status": "resolved", "kind": "near-collision"}
+{"input": "SentinelOne", "expected_id": "sentinelone/sentinelone", "expected_status": "resolved", "kind": "near-collision"}
+{"input": "CrowdStrike Falcon", "expected_id": "crowdstrike/falcon", "expected_status": "resolved", "kind": "exact"}
+{"input": "Falcon EDR", "expected_id": "crowdstrike/falcon", "expected_status": "resolved", "kind": "near-collision"}
+{"input": "Falcon", "expected_id": null, "expected_status": "ambiguous", "kind": "near-collision"}
+{"input": "Crowdstrik Falcon", "expected_id": "crowdstrike/falcon", "expected_status": "resolved", "kind": "typo"}
+{"input": "Microsoft", "expected_id": "microsoft/*", "expected_status": "resolved", "kind": "exact"}
+{"input": "Microsoft Copilot", "expected_id": "microsoft/copilot", "expected_status": "resolved", "kind": "hard-negative"}
+{"input": "GitHub Copilot", "expected_id": "github/copilot", "expected_status": "resolved", "kind": "hard-negative"}
+{"input": "Nginx", "expected_id": "nginx/nginx", "expected_status": "resolved", "kind": "exact"}
+{"input": "F5 NGINX", "expected_id": "nginx/nginx", "expected_status": "resolved", "kind": "exact"}
+{"input": "log4j", "expected_id": "apache/log4j", "expected_status": "resolved", "kind": "exact"}
+{"input": "Log4j2", "expected_id": "apache/log4j", "expected_status": "resolved", "kind": "exact"}
+{"input": "Apache Log4j 2.14", "expected_id": "apache/log4j", "expected_status": "resolved", "kind": "exact"}
+{"input": "Experience Manager (AEM) Forms", "expected_id": "adobe/experience_manager_forms", "expected_status": "resolved", "kind": "exact"}
+{"input": "Google Cloud", "expected_id": "google/cloud", "expected_status": "resolved", "kind": "hard-negative"}
+{"input": "Google", "expected_id": "google/*", "expected_status": "resolved", "kind": "hard-negative"}
+{"input": "C++", "expected_id": "cpp/cpp", "expected_status": "resolved", "kind": "hard-negative"}
+{"input": "C#", "expected_id": "csharp/csharp", "expected_status": "resolved", "kind": "hard-negative"}
+{"input": "C", "expected_id": "c/c", "expected_status": "resolved", "kind": "hard-negative"}
+{"input": "k8s", "expected_id": "kubernetes/kubernetes", "expected_status": "resolved", "kind": "exact"}
+{"input": "VS Code", "expected_id": "microsoft/visual_studio_code", "expected_status": "resolved", "kind": "exact"}
+{"input": "Atlassian SourceTree", "expected_id": "atlassian/sourcetree", "expected_status": "resolved", "kind": "exact"}
+{"input": "Totally Unknown Thing", "expected_id": null, "expected_status": "no_match", "kind": "unknown"}
+{"input": "Acme Widget Pro", "expected_id": null, "expected_status": "no_match", "kind": "unknown"}

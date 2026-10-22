@@ -8,6 +8,7 @@ from pathlib import Path
 
 from src.build import build_tables, load_snapshot, validate, write_snapshot
 from src.constants import DATA_DIR
+from src.eval import evaluate
 from src.models import AliasRow, Filters, Hints, load_sources
 from src.normalize import normalize
 from src.resolver import Resolver, snapshot_path
@@ -42,6 +43,13 @@ def cmd_validate(args: argparse.Namespace) -> int:
     errors = validate(sources, build_tables(sources))
     print("\n".join(errors) if errors else f"ok: {len(sources.entities)} entities")
     return FAILED if errors else OK
+
+
+def cmd_eval(args: argparse.Namespace) -> int:
+    sources = load_sources(args.data_dir)
+    report = evaluate(sources, build_tables(sources))
+    print(json.dumps(report, indent=2))
+    return OK if report["gate_passed"] else FAILED
 
 
 def load_resolver(path: Path, data_dir: Path) -> Resolver:
@@ -92,9 +100,11 @@ def build_parser() -> argparse.ArgumentParser:
     validate_cmd = sub.add_parser("validate", help="check source-file invariants")
     resolve_cmd = sub.add_parser("resolve", help="resolve one name (Flow B)")
     _resolve_args(resolve_cmd)
+    eval_cmd = sub.add_parser("eval", help="gold-set metrics, sweep and reliability (D-38)")
     add = sub.add_parser("add-alias", help="idempotent alias upsert with provenance (D-36)")
     _add_alias_args(add)
-    for command, handler in ((build, cmd_build), (validate_cmd, cmd_validate), (resolve_cmd, cmd_resolve), (add, cmd_add_alias)):
+    for command, handler in ((build, cmd_build), (validate_cmd, cmd_validate), (resolve_cmd, cmd_resolve), (eval_cmd, cmd_eval),
+                             (add, cmd_add_alias)):
         _common(command)
         command.set_defaults(handler=handler)
     return parser
