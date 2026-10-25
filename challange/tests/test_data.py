@@ -20,6 +20,18 @@ def test_every_entity_has_known_category() -> None:
     assert all(entity.category in known for entity in sources.entities)
 
 
+def test_concept_terms_map_to_one_concept_each() -> None:
+    concepts = load_sources(DATA_DIR).concepts
+    terms = [row.term for row in concepts]
+    assert len(terms) == len(set(terms))
+    assert {("kubernetes", "k8s"), ("kubernetes", "k8")} <= {(row.concept_id, row.term) for row in concepts}
+
+
+def test_every_entity_has_a_concept_phrase() -> None:
+    sources = load_sources(DATA_DIR)
+    assert {row.entity_id for row in sources.entity_concepts} == {entity.id for entity in sources.entities}
+
+
 def test_thresholds_match_d28() -> None:
     thresholds = load_sources(DATA_DIR).thresholds
     assert (thresholds.t_high, thresholds.t_low, thresholds.margin) == (0.75, 0.5, 0.15)

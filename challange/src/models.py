@@ -9,6 +9,7 @@ from src.constants import NO_CONFIDENCE, Status, Strength
 
 ID_PATTERN = r"^[a-z0-9][a-z0-9_.+-]*/([a-z0-9][a-z0-9_.+-]*|\*)$"
 SLUG_PATTERN = r"^[a-z0-9][a-z0-9_.+-]*$"
+TOKEN_PATTERN = r"^[a-z0-9][a-z0-9+#]*$"
 
 
 class Frozen(BaseModel):
@@ -99,12 +100,27 @@ class Thresholds(Frozen):
     coverage_target: float
 
 
+class ConceptRow(Frozen):
+    concept_id: str = Field(pattern=TOKEN_PATTERN)
+    term: str = Field(pattern=TOKEN_PATTERN)
+
+
+class EntityConceptRow(Frozen):
+    entity_id: str = Field(pattern=ID_PATTERN)
+    phrase: str = Field(min_length=1)
+    weight: float = Field(gt=0, le=1)
+    source: str = "manual"
+    evidence_url: str = ""
+
+
 class Sources(Frozen):
     categories: tuple[CategoryLeaf, ...]
     vendors: tuple[VendorRow, ...]
     entities: tuple[EntityRow, ...]
     aliases: tuple[AliasRow, ...]
     thresholds: Thresholds
+    concepts: tuple[ConceptRow, ...] = ()
+    entity_concepts: tuple[EntityConceptRow, ...] = ()
 
 
 def load_categories(path: Path) -> tuple[CategoryLeaf, ...]:
@@ -145,6 +161,16 @@ def _drop_empty(row: dict[str, str]) -> dict[str, str]:
     return {key: value for key, value in row.items() if value != ""}
 
 
+def load_concepts(path: Path) -> tuple[ConceptRow, ...]:
+    with path.open(newline="") as handle:
+        return tuple(ConceptRow.model_validate(row) for row in csv.DictReader(handle))
+
+
+def load_entity_concepts(path: Path) -> tuple[EntityConceptRow, ...]:
+    with path.open(newline="") as handle:
+        return tuple(EntityConceptRow.model_validate(_drop_empty(row)) for row in csv.DictReader(handle))
+
+
 def load_sources(data_dir: Path) -> Sources:
     return Sources(
         categories=load_categories(data_dir / "categories.yaml"),
@@ -152,4 +178,6 @@ def load_sources(data_dir: Path) -> Sources:
         entities=load_entities(data_dir / "entities.jsonl"),
         aliases=load_aliases(data_dir / "aliases.csv"),
         thresholds=Thresholds.model_validate(yaml.safe_load((data_dir / "thresholds.yaml").read_text())),
+        concepts=load_concepts(data_dir / "concepts.csv"),
+        entity_concepts=load_entity_concepts(data_dir / "entity_concepts.csv"),
     )

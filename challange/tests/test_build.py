@@ -2,7 +2,7 @@ from pathlib import Path
 
 from src.build import build_tables, validate
 from src.constants import DATA_DIR, Strength
-from src.models import AliasRow, Sources, VendorRow, load_sources
+from src.models import AliasRow, EntityConceptRow, Sources, VendorRow, load_sources
 from src.snapshot import load_snapshot, write_snapshot
 
 
@@ -17,6 +17,21 @@ def _with_alias(sources: Sources, alias: str, entity_id: str) -> Sources:
 
 def _targets(sources: Sources, alias: str) -> set[str]:
     return {hit.entity_id for hit in build_tables(sources).aliases[alias]}
+
+
+def _with_concept(sources: Sources, entity_id: str, phrase: str) -> Sources:
+    extra = EntityConceptRow(entity_id=entity_id, phrase=phrase, weight=1.0)
+    return sources.model_copy(update={"entity_concepts": (*sources.entity_concepts, extra)})
+
+
+def test_validate_flags_unknown_concept_word() -> None:
+    sources = _with_concept(_sources(), "aws/eks", "warp drive")
+    assert any("unknown concept" in error for error in validate(sources, build_tables(sources)))
+
+
+def test_validate_flags_concept_on_unknown_entity() -> None:
+    sources = _with_concept(_sources(), "aws/nope", "kubernetes")
+    assert any("aws/nope" in error for error in validate(sources, build_tables(sources)))
 
 
 def test_index_version_is_content_hash() -> None:

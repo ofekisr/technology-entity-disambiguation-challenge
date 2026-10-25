@@ -163,5 +163,16 @@ def _entity_errors(sources: Sources) -> Iterator[str]:
             yield f"entity {entity.id}: id does not start with its vendor"
 
 
+def _concept_errors(sources: Sources) -> Iterator[str]:
+    concepts = {row.concept_id for row in sources.concepts}
+    entities = {entity.id for entity in sources.entities}
+    for row in sources.entity_concepts:
+        if row.entity_id not in entities:
+            yield f"concept phrase '{row.phrase}' points to unknown entity {row.entity_id}"
+        unknown = sorted(set(normalize(row.phrase).split()) - concepts)
+        if unknown:
+            yield f"entity {row.entity_id}: unknown concept {unknown} in '{row.phrase}'"
+
+
 def validate(sources: Sources, tables: Tables) -> list[str]:
-    return [*_alias_errors(tables), *_vendor_errors(sources), *_entity_errors(sources)]
+    return [*_alias_errors(tables), *_vendor_errors(sources), *_entity_errors(sources), *_concept_errors(sources)]
