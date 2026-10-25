@@ -1,5 +1,6 @@
-from src.constants import Status
-from src.models import Filters, Hints, Resolution
+from src.build import build_tables
+from src.constants import DATA_DIR, Status
+from src.models import AliasRow, Filters, Hints, Resolution, load_sources
 from src.ports import InMemoryLedger, InMemoryReviewQueue, LedgerKey
 from src.resolver import Resolver, resolve
 from src.tables import Tables
@@ -72,6 +73,13 @@ def test_split_compound_matches_the_joined_alias(resolver: Resolver) -> None:
     assert resolver.resolve("Sentinel One").id == "sentinelone/sentinelone"
     assert resolver.resolve("sentinel-one").id == "sentinelone/sentinelone"
     assert resolver.resolve("Crowd Strike Falcon").id == "crowdstrike/falcon"
+
+
+def test_users_own_words_win_over_synonym_rewrite() -> None:
+    sources = load_sources(DATA_DIR)
+    short_alias = AliasRow(alias="FW", entity_id="fortinet/fortigate")
+    tables = build_tables(sources.model_copy(update={"aliases": (*sources.aliases, short_alias)}))
+    assert Resolver(tables).resolve("fw").id == "fortinet/fortigate"
 
 
 def test_synonym_in_free_text_resolves(resolver: Resolver) -> None:

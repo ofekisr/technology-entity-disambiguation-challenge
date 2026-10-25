@@ -22,8 +22,9 @@ def default_matcher(tables: Tables) -> Matcher:
     catalog = Catalog(tables)
     exact = ExactAlias(tables, catalog)
     fuzzy = FuzzyAlias(tables, catalog, TypoCorrector(tables.idf))
-    chain = FirstHit((exact, JoinedWords(exact), WithoutNumbers(exact, catalog), fuzzy))
-    return SynonymRewrite(chain, tables.synonyms, tables.idf)
+    exact_tiers = (exact, JoinedWords(exact), WithoutNumbers(exact, catalog))
+    by_meaning = SynonymRewrite(FirstHit((*exact_tiers, fuzzy)), tables.synonyms, tables.idf)
+    return FirstHit((*exact_tiers, by_meaning))
 
 
 class Resolver:
