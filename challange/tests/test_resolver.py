@@ -49,8 +49,19 @@ def test_short_tokens_are_never_typo_corrected(resolver: Resolver) -> None:
     assert resolver.resolve("EKX").status is Status.NO_MATCH
 
 
-def test_vendor_prefix_with_extra_token_still_resolves(resolver: Resolver) -> None:
-    assert resolver.resolve("CrowdStrike Falcon Sensor").id == "crowdstrike/falcon"
+def test_vendor_prefix_with_extra_token_is_ambiguous(resolver: Resolver) -> None:
+    result = resolver.resolve("CrowdStrike Falcon Sensor")
+    assert (result.status, result.alternatives[0].id) == (Status.AMBIGUOUS, "crowdstrike/falcon")
+
+
+def test_inferred_vendor_bonus_cannot_resolve_a_sibling(resolver: Resolver) -> None:
+    for name in ("Splunk Enterprise Security", "Microsoft Defender for Cloud"):
+        assert resolver.resolve(name).status is not Status.RESOLVED
+
+
+def test_hint_bonus_does_not_lift_a_weak_fuzzy_score_to_resolved(resolver: Resolver) -> None:
+    result = resolver.resolve("Splunk Enterprise Security", hints=Hints(vendor="Splunk"))
+    assert result.status is not Status.RESOLVED
 
 
 def test_module_level_resolve_carries_index_version() -> None:

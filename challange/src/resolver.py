@@ -34,7 +34,8 @@ EXACT_QUALITY = 1.0
 SNAPSHOT_ENV = "IDX_SNAPSHOT"
 STRONG_RANK = STRENGTH_RANK[Strength.STRONG]
 
-Scored = list[tuple[float, str]]
+Candidate = tuple[float, float, str]
+Scored = list[Candidate]
 WeightedTokens = dict[str, float]
 
 
@@ -88,8 +89,8 @@ class Resolver:
     def _exact(self, input_norm: str, hints: Hints, filters: Filters) -> Scored:
         hits = [hit for hit in self.tables.aliases.get(input_norm, ()) if self._passes(hit.entity_id, filters)]
         if len(hits) == 1 and STRENGTH_RANK[hits[0].strength] >= STRONG_RANK:
-            return [(BASE_BY_STRENGTH[hits[0].strength], hits[0].entity_id)]
-        return [(BASE_BY_STRENGTH[hit.strength] + self._bonus(hit.entity_id, hints), hit.entity_id) for hit in hits]
+            return [self._boosted(BASE_BY_STRENGTH[hits[0].strength], hits[0].entity_id, Hints())]
+        return [self._boosted(BASE_BY_STRENGTH[hit.strength], hit.entity_id, hints) for hit in hits]
 
     def _fuzzy(self, input_norm: str, hints: Hints, filters: Filters) -> Scored:
         vendor_id, residue = self._decompose(input_norm.split())
@@ -100,7 +101,7 @@ class Resolver:
         required = {corrections.get(token, (token, EXACT_QUALITY))[0] for token in residue} if vendor_id else set()
         scores = self._candidate_scores(weighted, required, filters)
         top = sorted(scores.items(), key=lambda item: (-item[1], item[0]))[: self.tables.thresholds.top_k]
-        return [(score + self._bonus(entity_id, hints), entity_id) for entity_id, score in top]
+        return [self._boosted(score, entity_id, hints) for entity_id, score in top]
 
     def _decompose(self, tokens: list[str]) -> tuple[str | None, list[str]]:
         for size in range(len(tokens), 0, -1):
@@ -147,6 +148,9 @@ class Resolver:
     def _idf(self, token: str) -> float:
         return self.tables.idf.get(token, self._unknown_idf)
 
+    def _boosted(self, score: float, entity_id: str, hints: Hints) -> Candidate:
+        return score + self._bonus(entity_id, hints), score, entity_id
+
     def _bonus(self, entity_id: str, hints: Hints) -> float:
         record = self.tables.entities[entity_id]
         matches = hints.vendor == record.vendor_id or hints.category == record.category
@@ -160,14 +164,14 @@ class Resolver:
         return vendor_ok and category_ok
 
     def _decide(self, scored: Scored) -> Resolution:
-        ranked = sorted(scored, key=lambda item: (-item[0], item[1]))
+        ranked = sorted(scored, key=lambda item: (-item[0], item[2]))
         thresholds = self.tables.thresholds
         if not ranked or ranked[0][0] < thresholds.t_low:
             return Resolution.no_match(self.tables.index_version)
-        top_score, top_id = ranked[0]
+        top_score, top_raw, top_id = ranked[0]
         margin = top_score - (ranked[1][0] if len(ranked) > 1 else 0.0)
-        if top_score >= thresholds.t_high and margin >= thresholds.margin:
-            return self._resolved(self.tables.entities[top_id], top_score)
+        if top_raw >= thresholds.t_high and margin >= thresholds.margin:
+            return self._resolved(self.tables.entities[top_id], top_raw)
         return self._ambiguous([item for item in ranked if item[0] >= thresholds.t_low])
 
     def _resolved(self, record: EntityRecord, score: float) -> Resolution:
@@ -183,10 +187,10 @@ class Resolver:
 
     def _ambiguous(self, ranked: Scored) -> Resolution:
         shown = ranked[:MAX_ALTERNATIVES]
-        total = sum(score for score, _ in shown)
+        total = sum(score for score, _, _ in shown)
         alternatives = tuple(
             Alternative(id=entity_id, canonical_name=self.tables.entities[entity_id].canonical_name, confidence=round(score / total, CONFIDENCE_DECIMALS))
-            for score, entity_id in shown
+            for score, _, entity_id in shown
         )
         empty = Resolution.no_match(self.tables.index_version)
         top = self._calibrate(shown[0][0])
