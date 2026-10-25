@@ -7,7 +7,7 @@ from src.catalog import Catalog
 from src.constants import DATA_DIR, DEFAULT_SNAPSHOT, LRU_MAXSIZE, Status
 from src.decide import Decider
 from src.fuzzy import FuzzyAlias
-from src.matchers import ExactAlias, FirstHit, JoinedWords, Matcher, Query, WithoutNumbers
+from src.matchers import ExactAlias, FirstHit, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers
 from src.models import Filters, Hints, Resolution, load_sources
 from src.normalize import normalize
 from src.ports import InMemoryLedger, InMemoryReviewQueue, LedgerKey, ResponseLedger, ReviewQueue
@@ -22,7 +22,8 @@ def default_matcher(tables: Tables) -> Matcher:
     catalog = Catalog(tables)
     exact = ExactAlias(tables, catalog)
     fuzzy = FuzzyAlias(tables, catalog, TypoCorrector(tables.idf))
-    return FirstHit((exact, JoinedWords(exact), WithoutNumbers(exact, catalog), fuzzy))
+    chain = FirstHit((exact, JoinedWords(exact), WithoutNumbers(exact, catalog), fuzzy))
+    return SynonymRewrite(chain, tables.synonyms, tables.idf)
 
 
 class Resolver:

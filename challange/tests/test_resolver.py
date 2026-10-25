@@ -74,6 +74,10 @@ def test_split_compound_matches_the_joined_alias(resolver: Resolver) -> None:
     assert resolver.resolve("Crowd Strike Falcon").id == "crowdstrike/falcon"
 
 
+def test_synonym_in_free_text_resolves(resolver: Resolver) -> None:
+    assert resolver.resolve("Amazon managed k8").id == "aws/eks"
+
+
 def test_vendor_plus_concept_phrase_resolves(resolver: Resolver) -> None:
     assert resolver.resolve("AWS managed Kubernetes").id == "aws/eks"
     assert resolver.resolve("Fortinet firewall").id == "fortinet/fortigate"

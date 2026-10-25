@@ -1,4 +1,4 @@
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Protocol
 
@@ -57,6 +57,22 @@ class WithoutNumbers:
             return []
         hits = self.exact.match(replace(query, text=stripped))
         return [self.catalog.boosted(min(raw, WEAK_BASE), entity_id, query.hints) for _, raw, entity_id in hits if not self.catalog.is_vendor(entity_id)]
+
+
+class SynonymRewrite:
+    def __init__(self, inner: Matcher, synonyms: Mapping[str, str], vocabulary: Mapping[str, float]) -> None:
+        self.inner = inner
+        self.synonyms = synonyms
+        self.vocabulary = vocabulary
+
+    def match(self, query: Query) -> Scored:
+        return self.inner.match(replace(query, text=self.rewrite(query.text)))
+
+    def rewrite(self, text: str) -> str:
+        return " ".join(self._concept(token) for token in text.split())
+
+    def _concept(self, token: str) -> str:
+        return token if token in self.vocabulary else self.synonyms.get(token, token)
 
 
 class FirstHit:

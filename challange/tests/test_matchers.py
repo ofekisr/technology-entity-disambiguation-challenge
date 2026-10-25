@@ -4,7 +4,7 @@ from src.catalog import Catalog, Scored
 from src.constants import BASE_BY_STRENGTH, Status, Strength
 from src.decide import Decider
 from src.fuzzy import FuzzyAlias
-from src.matchers import ExactAlias, FirstHit, JoinedWords, Query, WithoutNumbers
+from src.matchers import ExactAlias, FirstHit, JoinedWords, Query, SynonymRewrite, WithoutNumbers
 from src.models import Filters, Hints
 from src.resolver import Resolver
 from src.tables import Tables
@@ -44,6 +44,16 @@ def test_without_numbers_skips_vendor_entities(exact: ExactAlias, tables: Tables
 def test_without_numbers_caps_at_weak(exact: ExactAlias, tables: Tables) -> None:
     [(_, raw, entity_id)] = WithoutNumbers(exact, Catalog(tables)).match(_query("python 3"))
     assert (entity_id, raw) == ("python/python", BASE_BY_STRENGTH[Strength.WEAK])
+
+
+def test_synonym_rewrite_feeds_the_concept_term(exact: ExactAlias, tables: Tables) -> None:
+    rewrite = SynonymRewrite(exact, tables.synonyms, tables.idf)
+    assert _ids(rewrite.match(_query("amazon managed k8"))) == ["aws/eks"]
+
+
+def test_synonym_rewrite_never_touches_a_known_word(exact: ExactAlias, tables: Tables) -> None:
+    rewrite = SynonymRewrite(exact, {"eks": "kubernetes", "k8": "kubernetes"}, tables.idf)
+    assert rewrite.rewrite("aws eks k8") == "aws eks kubernetes"
 
 
 def test_first_hit_stops_at_the_first_non_empty_matcher(exact: ExactAlias) -> None:
