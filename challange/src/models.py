@@ -98,6 +98,7 @@ class Thresholds(Frozen):
     hint_bonus: float
     precision_target: float
     coverage_target: float
+    concept_min_weight: float
 
 
 class ConceptRow(Frozen):

@@ -74,6 +74,11 @@ def test_split_compound_matches_the_joined_alias(resolver: Resolver) -> None:
     assert resolver.resolve("Crowd Strike Falcon").id == "crowdstrike/falcon"
 
 
+def test_vendor_plus_concept_phrase_resolves(resolver: Resolver) -> None:
+    assert resolver.resolve("AWS managed Kubernetes").id == "aws/eks"
+    assert resolver.resolve("Fortinet firewall").id == "fortinet/fortigate"
+
+
 def test_hint_bonus_does_not_lift_a_weak_fuzzy_score_to_resolved(resolver: Resolver) -> None:
     result = resolver.resolve("Splunk Enterprise Security", hints=Hints(vendor="Splunk"))
     assert result.status is not Status.RESOLVED

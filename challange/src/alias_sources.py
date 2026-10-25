@@ -25,9 +25,7 @@ class VendorProductCombos:
     def aliases(self, sources: Sources, records: Records) -> Iterator[AliasTriple]:
         vendors = {vendor.vendor_id: vendor for vendor in sources.vendors}
         for entity in sources.entities:
-            vendor = vendors[entity.vendor_id]
-            parent = vendors.get(vendor.parent_vendor_id or "")
-            for name in (*vendor_names(vendor), *(vendor_names(parent) if parent else ())):
+            for name in _names_with_parent(vendors, entity.vendor_id):
                 yield f"{name} {entity.product}", entity.id, Strength.GENERATED
 
 
@@ -48,6 +46,16 @@ class VendorNames:
                 yield alias, target, Strength.STRONG
 
 
+class ConceptCombos:
+    def aliases(self, sources: Sources, records: Records) -> Iterator[AliasTriple]:
+        vendors = {vendor.vendor_id: vendor for vendor in sources.vendors}
+        floor = sources.thresholds.concept_min_weight
+        for row in sources.entity_concepts:
+            if row.weight >= floor and row.entity_id in records:
+                for name in _names_with_parent(vendors, records[row.entity_id].vendor_id):
+                    yield f"{name} {row.phrase}", row.entity_id, Strength.WEAK
+
+
 class CuratedAliases:
     def aliases(self, sources: Sources, records: Records) -> Iterator[AliasTriple]:
         for row in sources.aliases:
@@ -60,8 +68,15 @@ DEFAULT_ALIAS_SOURCES: tuple[AliasSource, ...] = (
     CategoryCombos(),
     VendorNames(),
     CuratedAliases(),
+    ConceptCombos(),
 )
 
 
 def vendor_names(vendor: VendorRow) -> tuple[str, ...]:
     return (vendor.name, *vendor.aliases)
+
+
+def _names_with_parent(vendors: dict[str, VendorRow], vendor_id: str) -> tuple[str, ...]:
+    vendor = vendors[vendor_id]
+    parent = vendors.get(vendor.parent_vendor_id or "")
+    return (*vendor_names(vendor), *(vendor_names(parent) if parent else ()))

@@ -1,9 +1,9 @@
 import pytest
 
-from src.alias_sources import AliasSource, CanonicalNames, CategoryCombos, CuratedAliases, VendorNames, VendorProductCombos
+from src.alias_sources import AliasSource, CanonicalNames, CategoryCombos, ConceptCombos, CuratedAliases, VendorNames, VendorProductCombos
 from src.build import build_tables, entity_records
 from src.constants import DATA_DIR, Strength
-from src.models import Sources, load_sources
+from src.models import EntityConceptRow, Sources, load_sources
 from src.tables import EntityRecord
 
 
@@ -40,6 +40,20 @@ def test_vendor_names_point_to_the_flagship(sources: Sources, records: dict[str,
 
 def test_curated_aliases_keep_their_strength(sources: Sources, records: dict[str, EntityRecord]) -> None:
     assert ("Elastic Kubernetes Service", Strength.STRONG) in _aliases_of(CuratedAliases(), sources, records, "aws/eks")
+
+
+def test_concept_combos_pair_vendor_names_with_phrases(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    found = _aliases_of(ConceptCombos(), sources, records, "aws/eks")
+    assert {("AWS managed kubernetes", Strength.WEAK), ("Amazon managed kubernetes", Strength.WEAK)} <= found
+
+
+def test_concept_combos_never_emit_the_bare_phrase(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    assert ("managed kubernetes", Strength.WEAK) not in _aliases_of(ConceptCombos(), sources, records, "aws/eks")
+
+
+def test_concept_combos_skip_low_weight_edges(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    faint = EntityConceptRow(entity_id="aws/eks", phrase="kubernetes", weight=sources.thresholds.concept_min_weight / 2)
+    assert list(ConceptCombos().aliases(sources.model_copy(update={"entity_concepts": (faint,)}), records)) == []
 
 
 def test_build_runs_only_the_given_sources(sources: Sources) -> None:
