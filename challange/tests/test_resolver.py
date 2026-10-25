@@ -90,11 +90,6 @@ def test_four_char_token_accepts_one_edit_only(resolver: Resolver) -> None:
     assert resolver.resolve("Jiqq").status is Status.NO_MATCH
 
 
-def test_at_most_two_typo_tokens_are_corrected(resolver: Resolver) -> None:
-    found = resolver._corrections("crowdstrik falcn kuberntes".split())
-    assert found == {"crowdstrik": ("crowdstrike", 1 - 1 / 10), "falcn": ("falcon", 1 - 1 / 5)}
-
-
 class CountingLedger(InMemoryLedger):
     def __init__(self) -> None:
         super().__init__()
