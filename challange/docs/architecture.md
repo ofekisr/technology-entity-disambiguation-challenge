@@ -10,22 +10,23 @@ flowchart LR
         VEN[vendors.csv]
         ENT[entities.jsonl]
         ALI[aliases.csv]
+        CON["concepts.csv<br/>entity_concepts.csv (V4)"]
     end
 
     subgraph A["Flow A: add / update (offline)"]
         direction TB
         UPD["idx add-alias / PR<br/>idempotent upsert + provenance (D-36)"]
         PLUG["Enrichment plugins<br/>propose changesets (D-24, D-37)"]:::stub
-        BUILD["idx build<br/>ingest → generate aliases (D-44) → validate<br/>→ IDF / postings → calibrate → eval gate<br/>→ replay ledger diff (D-31)"]
+        BUILD["idx build<br/>ingest → generate aliases (D-44) + concept aliases (V4) → validate<br/>→ IDF / postings → calibrate → eval gate<br/>→ replay ledger diff (D-31)"]
         EVAL["Eval harness<br/>gold set, sweep, reliability (D-38, D-40)"]
     end
 
-    SNAP[("Snapshot vN<br/>one SQLite file<br/>index_version = content hash (D-22, D-35)")]
+    SNAP[("Snapshot vN<br/>one SQLite file + synonyms table<br/>index_version = content hash (D-22, D-35)")]
 
     subgraph B["Flow B: resolve (runtime)"]
         direction TB
         CALLER["Caller<br/>resolve(name, *, hints, filters)"]
-        LIB["Resolver library<br/>normalize → LRU → ledger → algorithm"]
+        LIB["Resolver library<br/>normalize → LRU → ledger → exact → synonym rewrite → exact + fuzzy → decide"]
         LEDGER["ResponseLedger port (D-17, D-31)"]:::stub
         RES["Resolution<br/>id, canonical_name, confidence, status,<br/>alternatives, index_version"]
         RQ["Review queue (D-47)"]:::stub

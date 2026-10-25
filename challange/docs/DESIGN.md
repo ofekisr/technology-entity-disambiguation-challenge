@@ -32,7 +32,7 @@ Output: `Resolution{id, canonical_name, vendor, category, confidence, status, al
 - **Snapshot (one SQLite file):** entities; `alias_norm → [(entity_id, strength)]`; `vendor_alias → vendor_id`; inverted index `token → aliases`; IDF; thresholds; calibration bins (D-20, D-35).
 - **Score:** IDF-weighted token-set Jaccard; the union counts alias tokens missing from the input (coverage penalty) (D-21).
 - **Code shape:** the build runs a list of `AliasSource` strategies (canonical names, vendor × product, category × product, vendor names, curated rows, concept combos).
-The resolver runs `SynonymRewrite` around a `FirstHit` chain of `Matcher` strategies (exact, joined words, without numbers, fuzzy), then one `Decider`.
+The resolver runs a `FirstHit` chain of `Matcher` strategies: exact, joined words and without numbers on the input as typed, then `SynonymRewrite` feeding the same exact steps plus fuzzy; one `Decider` closes it.
 A new source or matcher is one class; `Resolver(matcher=...)` and `build_tables(alias_sources=...)` accept custom chains.
 
 ## Semantic equivalence
@@ -42,7 +42,8 @@ Meaning is paid for once per product at build time, not once per request:
 
 - **Concept layer (V4):** `concepts.csv` (term → concept, `k8s → kubernetes`) and `entity_concepts.csv` (`aws/eks → kubernetes, managed`, with weight and provenance).
 - **Index:** one more `AliasSource` turns concept edges into generated aliases, `<vendor> × <concept phrase>` (`amazon managed kubernetes → aws/eks`), the D-44 pattern; concept-only phrases hit several products and return `ambiguous`.
-- **Resolver:** one more `Matcher` rewrites synonyms before the exact lookup (`k8 → kubernetes`); same snapshot, same determinism (amends D-07).
+- **Resolver:** one more `Matcher`, `SynonymRewrite`, runs after the exact steps on the input as typed miss: it rewrites unknown words (`k8 → kubernetes`), then re-runs the exact steps and fuzzy on the rewritten text. The user's own words always get the first exact try, so a short alias like `FW` is never rewritten away (D-49, amends D-07).
+- **Where meaning is searched:** in the alias table. Concept aliases are ordinary aliases, so the exact and fuzzy steps find them; the rewrite only translates words.
 - **Sources:** curated synonyms (Wikidata, StackOverflow tag synonyms), product docs (TF-IDF against same-vendor siblings), reviewed LLM proposals (D-24, D-37); package registries feed hard negatives only.
 - **Not at runtime:** embeddings and paid APIs stay offline as proposal sources; they score same-vendor siblings (Falcon vs Falcon, Sentinel × 3) as near-identical, where a confident wrong answer costs most (D-01, D-23).
 

@@ -32,4 +32,4 @@ resolve("AWS EKS", filters=Filters(vendors=("aws",)))
 ```
 
 CLI: `idx build | validate | resolve NAME | eval | add-alias ENTITY_ID ALIAS`.
-Source of truth: `src/data/` (`categories.yaml`, `vendors.csv`, `entities.jsonl`, `aliases.csv`, `thresholds.yaml`).
+Source of truth: `src/data/` (`categories.yaml`, `vendors.csv`, `entities.jsonl`, `aliases.csv`, `concepts.csv`, `entity_concepts.csv`, `thresholds.yaml`).
