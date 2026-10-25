@@ -101,6 +101,11 @@ def build_idf(postings: dict[str, tuple[str, ...]]) -> dict[str, float]:
     return {token: math.log1p(total / len(aliases)) for token, aliases in postings.items()}
 
 
+def build_synonyms(sources: Sources) -> dict[str, str]:
+    pairs = sorted((row.term, row.concept_id) for row in sources.concepts if row.term != row.concept_id)
+    return dict(pairs)
+
+
 def identity_calibration() -> tuple[tuple[float, float, float], ...]:
     width = 1.0 / CALIBRATION_BINS
     return tuple(
@@ -125,6 +130,7 @@ def build_tables(sources: Sources, alias_sources: Sequence[AliasSource] = DEFAUL
         vendor_aliases=build_vendor_aliases(sources),
         postings=postings,
         idf=build_idf(postings),
+        synonyms=build_synonyms(sources),
         thresholds=sources.thresholds,
         calibration=identity_calibration(),
     )

@@ -34,6 +34,18 @@ def test_validate_flags_concept_on_unknown_entity() -> None:
     assert any("aws/nope" in error for error in validate(sources, build_tables(sources)))
 
 
+def test_synonyms_map_terms_to_concepts() -> None:
+    synonyms = build_tables(_sources()).synonyms
+    assert (synonyms["k8s"], synonyms["kube"]) == ("kubernetes", "kubernetes")
+    assert "kubernetes" not in synonyms
+
+
+def test_snapshot_keeps_synonyms(tmp_path: Path) -> None:
+    tables = build_tables(_sources())
+    write_snapshot(tables, tmp_path / "index.sqlite")
+    assert load_snapshot(tmp_path / "index.sqlite").synonyms == tables.synonyms
+
+
 def test_index_version_is_content_hash() -> None:
     sources = _sources()
     first, second = build_tables(sources), build_tables(sources)

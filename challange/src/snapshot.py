@@ -18,6 +18,7 @@ SCHEMA = (
     "CREATE TABLE vendor_aliases (alias_norm TEXT PRIMARY KEY, vendor_id TEXT)",
     "CREATE TABLE postings (token TEXT, alias_norm TEXT, PRIMARY KEY (token, alias_norm))",
     "CREATE TABLE idf (token TEXT PRIMARY KEY, idf REAL)",
+    "CREATE TABLE synonyms (term TEXT PRIMARY KEY, concept_id TEXT NOT NULL)",
 )
 
 
@@ -42,6 +43,7 @@ def _write_rows(db: sqlite3.Connection, tables: Tables) -> None:
     db.executemany("INSERT INTO vendor_aliases VALUES (?, ?)", tables.vendor_aliases.items())
     db.executemany("INSERT INTO postings VALUES (?, ?)", _posting_rows(tables))
     db.executemany("INSERT INTO idf VALUES (?, ?)", tables.idf.items())
+    db.executemany("INSERT INTO synonyms VALUES (?, ?)", tables.synonyms.items())
 
 
 def _alias_rows(tables: Tables) -> Iterator[tuple[str, str, str]]:
@@ -65,6 +67,7 @@ def load_snapshot(path: Path) -> Tables:
             vendor_aliases=dict(db.execute("SELECT alias_norm, vendor_id FROM vendor_aliases ORDER BY 1")),
             postings=_load_postings(db),
             idf=dict(db.execute("SELECT token, idf FROM idf ORDER BY 1")),
+            synonyms=dict(db.execute("SELECT term, concept_id FROM synonyms ORDER BY 1")),
             thresholds=Thresholds.model_validate_json(meta["thresholds"]),
             calibration=tuple(tuple(row) for row in json.loads(meta["calibration"])),
             index_version=meta["index_version"],

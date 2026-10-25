@@ -30,6 +30,7 @@ class Tables:
     vendor_aliases: dict[str, str]
     postings: dict[str, tuple[str, ...]]
     idf: dict[str, float]
+    synonyms: dict[str, str]
     thresholds: Thresholds
     calibration: tuple[tuple[float, float, float], ...]
     index_version: str = field(default="")
