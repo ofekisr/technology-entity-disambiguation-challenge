@@ -1,7 +1,7 @@
-from src.build import EntityRecord, Tables
 from src.catalog import Scored
 from src.constants import CONFIDENCE_DECIMALS, FULL_CONFIDENCE, MAX_ALTERNATIVES, Status
 from src.models import Alternative, Resolution
+from src.tables import EntityRecord, Tables
 
 
 class Decider:

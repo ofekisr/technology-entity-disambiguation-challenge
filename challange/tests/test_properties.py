@@ -4,10 +4,11 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from src.build import Tables, build_tables
+from src.build import build_tables
 from src.constants import DATA_DIR, VENDOR_PRODUCT
 from src.models import load_sources
 from src.resolver import Resolver
+from src.tables import Tables
 
 TABLES: Tables = build_tables(load_sources(DATA_DIR))
 RESOLVER = Resolver(TABLES)

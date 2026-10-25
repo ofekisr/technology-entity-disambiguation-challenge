@@ -1,6 +1,6 @@
-from src.build import Tables
 from src.constants import UNCATEGORIZED, VENDOR_CATEGORY
 from src.models import Filters, Hints
+from src.tables import Tables
 
 Candidate = tuple[float, float, str]
 Scored = list[Candidate]

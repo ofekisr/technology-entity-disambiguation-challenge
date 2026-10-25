@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from src.build import Tables
+from src.tables import Tables
 from src.constants import (
     CALIBRATION_BINS,
     CONFIDENCE_DECIMALS,

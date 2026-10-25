@@ -1,4 +1,4 @@
-from src.build import Tables
+from src.tables import Tables
 from src.typos import TypoCorrector
 
 

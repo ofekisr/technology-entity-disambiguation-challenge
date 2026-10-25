@@ -1,6 +1,5 @@
 import pytest
 
-from src.build import Tables
 from src.catalog import Catalog, Scored
 from src.constants import BASE_BY_STRENGTH, Status, Strength
 from src.decide import Decider
@@ -8,6 +7,7 @@ from src.fuzzy import FuzzyAlias
 from src.matchers import ExactAlias, FirstHit, JoinedWords, Query, WithoutNumbers
 from src.models import Filters, Hints
 from src.resolver import Resolver
+from src.tables import Tables
 from src.typos import TypoCorrector
 
 

@@ -2,7 +2,7 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
-from src.build import Tables, build_tables, load_snapshot, write_snapshot
+from src.build import build_tables
 from src.catalog import Catalog
 from src.constants import DATA_DIR, DEFAULT_SNAPSHOT, LRU_MAXSIZE, Status
 from src.decide import Decider
@@ -11,6 +11,8 @@ from src.matchers import ExactAlias, FirstHit, JoinedWords, Matcher, Query, With
 from src.models import Filters, Hints, Resolution, load_sources
 from src.normalize import normalize
 from src.ports import InMemoryLedger, InMemoryReviewQueue, LedgerKey, ResponseLedger, ReviewQueue
+from src.snapshot import load_snapshot, write_snapshot
+from src.tables import Tables
 from src.typos import TypoCorrector
 
 SNAPSHOT_ENV = "IDX_SNAPSHOT"

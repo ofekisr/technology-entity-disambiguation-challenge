@@ -2,12 +2,12 @@ import json
 
 import pytest
 
-from src.build import Tables
 from src.cli import main
 from src.constants import DATA_DIR, Status
 from src.eval import build_gold_set, evaluate, load_hand_cases, without_alias
 from src.models import load_sources
 from src.resolver import Resolver
+from src.tables import Tables
 
 MIN_GOLD_CASES = 150
 MIN_PARAPHRASE_CASES = 6

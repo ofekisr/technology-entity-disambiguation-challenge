@@ -1,0 +1,47 @@
+import pytest
+
+from src.alias_sources import AliasSource, CanonicalNames, CategoryCombos, CuratedAliases, VendorNames, VendorProductCombos
+from src.build import build_tables, entity_records
+from src.constants import DATA_DIR, Strength
+from src.models import Sources, load_sources
+from src.tables import EntityRecord
+
+
+@pytest.fixture(scope="module")
+def sources() -> Sources:
+    return load_sources(DATA_DIR)
+
+
+@pytest.fixture(scope="module")
+def records(sources: Sources) -> dict[str, EntityRecord]:
+    return entity_records(sources)
+
+
+def _aliases_of(source: AliasSource, sources: Sources, records: dict[str, EntityRecord], entity_id: str) -> set[tuple[str, Strength]]:
+    return {(alias, strength) for alias, target, strength in source.aliases(sources, records) if target == entity_id}
+
+
+def test_canonical_names_give_canonical_and_weak_product(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    found = _aliases_of(CanonicalNames(), sources, records, "aws/eks")
+    assert {("AWS EKS", Strength.CANONICAL), ("EKS", Strength.WEAK)} <= found
+
+
+def test_vendor_product_combos_include_the_parent_vendor(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    assert ("Amazon EKS", Strength.GENERATED) in _aliases_of(VendorProductCombos(), sources, records, "aws/eks")
+
+
+def test_category_combos_use_the_category_label(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    assert ("EKS Cloud Service", Strength.GENERATED) in _aliases_of(CategoryCombos(), sources, records, "aws/eks")
+
+
+def test_vendor_names_point_to_the_flagship(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    assert ("Amazon Web Services", Strength.STRONG) in _aliases_of(VendorNames(), sources, records, "aws/aws")
+
+
+def test_curated_aliases_keep_their_strength(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    assert ("Elastic Kubernetes Service", Strength.STRONG) in _aliases_of(CuratedAliases(), sources, records, "aws/eks")
+
+
+def test_build_runs_only_the_given_sources(sources: Sources) -> None:
+    aliases = build_tables(sources, alias_sources=(CuratedAliases(),)).aliases
+    assert "elastic kubernetes service" in aliases and "aws eks" not in aliases

@@ -1,8 +1,8 @@
-from src.build import Tables
 from src.constants import Status
 from src.models import Filters, Hints, Resolution
 from src.ports import InMemoryLedger, InMemoryReviewQueue, LedgerKey
 from src.resolver import Resolver, resolve
+from src.tables import Tables
 
 
 def test_vendor_hint_breaks_the_sentinel_tie(resolver: Resolver) -> None:

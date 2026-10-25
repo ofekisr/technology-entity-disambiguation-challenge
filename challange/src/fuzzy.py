@@ -1,10 +1,10 @@
 import math
 from collections import defaultdict
 
-from src.build import Tables
 from src.catalog import Catalog, Scored
 from src.matchers import Query
 from src.models import Filters, Hints
+from src.tables import Tables
 from src.typos import EXACT_QUALITY, TypoCorrector
 
 WeightedTokens = dict[str, float]

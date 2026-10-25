@@ -2,10 +2,10 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, replace
 from typing import Protocol
 
-from src.build import Tables
 from src.catalog import Catalog, Scored
 from src.constants import BASE_BY_STRENGTH, STRENGTH_RANK, Strength
 from src.models import Filters, Hints
+from src.tables import Tables
 
 STRONG_RANK = STRENGTH_RANK[Strength.STRONG]
 WEAK_BASE = BASE_BY_STRENGTH[Strength.WEAK]

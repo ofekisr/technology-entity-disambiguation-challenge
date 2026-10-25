@@ -1,8 +1,9 @@
 from pathlib import Path
 
-from src.build import build_tables, load_snapshot, validate, write_snapshot
+from src.build import build_tables, validate
 from src.constants import DATA_DIR, Strength
 from src.models import AliasRow, Sources, VendorRow, load_sources
+from src.snapshot import load_snapshot, write_snapshot
 
 
 def _sources() -> Sources:

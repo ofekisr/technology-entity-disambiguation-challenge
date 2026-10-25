@@ -6,12 +6,13 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from src.build import build_tables, load_snapshot, validate, write_snapshot
+from src.build import build_tables, validate
 from src.constants import DATA_DIR, RSS_DECIMALS
 from src.eval import evaluate
 from src.models import AliasRow, Filters, Hints, load_sources
 from src.normalize import normalize
 from src.resolver import Resolver, snapshot_path
+from src.snapshot import load_snapshot, write_snapshot
 
 OK, FAILED = 0, 1
 BYTES_PER_MB = 1024 * 1024
