@@ -68,6 +68,12 @@ def test_product_plus_release_number_keeps_the_product(resolver: Resolver) -> No
     assert resolver.resolve("Python 3").id == "python/python"
 
 
+def test_split_compound_matches_the_joined_alias(resolver: Resolver) -> None:
+    assert resolver.resolve("Sentinel One").id == "sentinelone/sentinelone"
+    assert resolver.resolve("sentinel-one").id == "sentinelone/sentinelone"
+    assert resolver.resolve("Crowd Strike Falcon").id == "crowdstrike/falcon"
+
+
 def test_hint_bonus_does_not_lift_a_weak_fuzzy_score_to_resolved(resolver: Resolver) -> None:
     result = resolver.resolve("Splunk Enterprise Security", hints=Hints(vendor="Splunk"))
     assert result.status is not Status.RESOLVED

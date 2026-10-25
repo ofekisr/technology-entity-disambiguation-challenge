@@ -83,7 +83,7 @@ class Resolver:
     def _compute(self, input_norm: str, hints: Hints, filters: Filters) -> Resolution:
         if not input_norm:
             return Resolution.no_match(self.tables.index_version)
-        exact = self._exact(input_norm, hints, filters) or self._exact_without_numbers(input_norm, hints, filters)
+        exact = self._exact_tiers(input_norm, hints, filters)
         if exact:
             return self._decide(exact)
         return self._decide(self._fuzzy(input_norm, hints, filters))
@@ -93,6 +93,22 @@ class Resolver:
         if len(hits) == 1 and STRENGTH_RANK[hits[0].strength] >= STRONG_RANK:
             return [self._boosted(BASE_BY_STRENGTH[hits[0].strength], hits[0].entity_id, Hints())]
         return [self._boosted(BASE_BY_STRENGTH[hit.strength], hit.entity_id, hints) for hit in hits]
+
+    def _exact_tiers(self, input_norm: str, hints: Hints, filters: Filters) -> Scored:
+        for lookup in (self._exact, self._exact_joined, self._exact_without_numbers):
+            hits = lookup(input_norm, hints, filters)
+            if hits:
+                return hits
+        return []
+
+    def _exact_joined(self, input_norm: str, hints: Hints, filters: Filters) -> Scored:
+        tokens = input_norm.split()
+        for index in range(len(tokens) - 1):
+            joined = [*tokens[:index], tokens[index] + tokens[index + 1], *tokens[index + 2 :]]
+            hits = self._exact(" ".join(joined), hints, filters)
+            if hits:
+                return hits
+        return []
 
     def _exact_without_numbers(self, input_norm: str, hints: Hints, filters: Filters) -> Scored:
         stripped = " ".join(token for token in input_norm.split() if not token.isdigit())
