@@ -5,7 +5,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import asdict
 
-from src.alias_sources import DEFAULT_ALIAS_SOURCES, AliasSource, vendor_names
+from src.alias_sources import DEFAULT_ALIAS_SOURCES, AliasSource, prefix_names
 from src.constants import (
     BIN_EDGE_DECIMALS,
     FULL_CONFIDENCE,
@@ -79,7 +79,7 @@ def build_alias_index(
 
 def build_vendor_aliases(sources: Sources) -> dict[str, str]:
     pairs = sorted(
-        (normalize(name), vendor.vendor_id) for vendor in sources.vendors for name in vendor_names(vendor)
+        (normalize(name), vendor.vendor_id) for vendor in sources.vendors for name in prefix_names(vendor)
     )
     index: dict[str, str] = {}
     for alias_norm, vendor_id in pairs:

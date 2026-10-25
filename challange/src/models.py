@@ -28,6 +28,7 @@ class VendorRow(Frozen):
     parent_vendor_id: str | None = None
     flagship_entity_id: str | None = Field(default=None, pattern=ID_PATTERN)
     aliases: tuple[str, ...] = ()
+    prefix_aliases: tuple[str, ...] = ()
 
 
 class EntityRow(Frozen):
@@ -144,8 +145,13 @@ def _vendor_row(row: dict[str, str]) -> VendorRow:
         name=row["name"],
         parent_vendor_id=row["parent_vendor_id"] or None,
         flagship_entity_id=row["flagship_entity_id"] or None,
-        aliases=tuple(alias for alias in row["aliases"].split("|") if alias),
+        aliases=_split(row["aliases"]),
+        prefix_aliases=_split(row.get("prefix_aliases") or ""),
     )
+
+
+def _split(cell: str) -> tuple[str, ...]:
+    return tuple(alias for alias in cell.split("|") if alias)
 
 
 def load_entities(path: Path) -> tuple[EntityRow, ...]:

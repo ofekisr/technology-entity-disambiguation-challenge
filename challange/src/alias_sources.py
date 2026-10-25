@@ -76,7 +76,11 @@ def vendor_names(vendor: VendorRow) -> tuple[str, ...]:
     return (vendor.name, *vendor.aliases)
 
 
+def prefix_names(vendor: VendorRow) -> tuple[str, ...]:
+    return (*vendor_names(vendor), *vendor.prefix_aliases)
+
+
 def _names_with_parent(vendors: dict[str, VendorRow], vendor_id: str) -> tuple[str, ...]:
     vendor = vendors[vendor_id]
     parent = vendors.get(vendor.parent_vendor_id or "")
-    return (*vendor_names(vendor), *(vendor_names(parent) if parent else ()))
+    return (*prefix_names(vendor), *(prefix_names(parent) if parent else ()))

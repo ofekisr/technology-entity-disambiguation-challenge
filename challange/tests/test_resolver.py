@@ -75,6 +75,15 @@ def test_split_compound_matches_the_joined_alias(resolver: Resolver) -> None:
     assert resolver.resolve("Crowd Strike Falcon").id == "crowdstrike/falcon"
 
 
+def test_vendor_prefix_alias_works_before_a_product(resolver: Resolver) -> None:
+    assert resolver.resolve("MS Teams").id == "microsoft/teams"
+    assert resolver.resolve("MS Defender for Endpoint").id == "microsoft/defender_for_endpoint"
+
+
+def test_vendor_prefix_alias_alone_never_resolves(resolver: Resolver) -> None:
+    assert resolver.resolve("MS").status is not Status.RESOLVED
+
+
 def test_users_own_words_win_over_synonym_rewrite() -> None:
     sources = load_sources(DATA_DIR)
     short_alias = AliasRow(alias="FW", entity_id="fortinet/fortigate")

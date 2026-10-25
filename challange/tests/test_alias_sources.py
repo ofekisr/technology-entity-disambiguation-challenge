@@ -38,6 +38,12 @@ def test_vendor_names_point_to_the_flagship(sources: Sources, records: dict[str,
     assert ("Amazon Web Services", Strength.STRONG) in _aliases_of(VendorNames(), sources, records, "aws/aws")
 
 
+def test_prefix_aliases_are_never_standalone(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    standalone = {alias for alias, _, _ in VendorNames().aliases(sources, records)}
+    combos = _aliases_of(VendorProductCombos(), sources, records, "microsoft/teams")
+    assert "MS" not in standalone and ("MS Teams", Strength.GENERATED) in combos
+
+
 def test_curated_aliases_keep_their_strength(sources: Sources, records: dict[str, EntityRecord]) -> None:
     assert ("Elastic Kubernetes Service", Strength.STRONG) in _aliases_of(CuratedAliases(), sources, records, "aws/eks")
 
