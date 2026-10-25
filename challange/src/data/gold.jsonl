@@ -35,3 +35,15 @@
 {"input": "Atlassian SourceTree", "expected_id": "atlassian/sourcetree", "expected_status": "resolved", "kind": "exact"}
 {"input": "Totally Unknown Thing", "expected_id": null, "expected_status": "no_match", "kind": "unknown"}
 {"input": "Acme Widget Pro", "expected_id": null, "expected_status": "no_match", "kind": "unknown"}
+{"input": "Amazon managed k8", "expected_id": "aws/eks", "expected_status": "resolved", "kind": "paraphrase"}
+{"input": "AWS managed Kubernetes", "expected_id": "aws/eks", "expected_status": "resolved", "kind": "paraphrase"}
+{"input": "Amazon Kubernetes", "expected_id": "aws/eks", "expected_status": "resolved", "kind": "paraphrase"}
+{"input": "Google managed Kubernetes", "expected_id": "google/kubernetes_engine", "expected_status": "resolved", "kind": "paraphrase"}
+{"input": "Sentinel One", "expected_id": "sentinelone/sentinelone", "expected_status": "resolved", "kind": "paraphrase"}
+{"input": "MS Teams", "expected_id": "microsoft/teams", "expected_status": "resolved", "kind": "paraphrase"}
+{"input": "Splunk Enterprise Security", "expected_id": null, "expected_status": "no_match", "kind": "hard-negative"}
+{"input": "Microsoft Defender for Cloud", "expected_id": null, "expected_status": "no_match", "kind": "hard-negative"}
+{"input": "Microsoft 365", "expected_id": null, "expected_status": "no_match", "kind": "hard-negative"}
+{"input": "Office 365", "expected_id": null, "expected_status": "no_match", "kind": "hard-negative"}
+{"input": "Dynamics 365", "expected_id": null, "expected_status": "no_match", "kind": "hard-negative"}
+{"input": "Amazon Prime", "expected_id": null, "expected_status": "no_match", "kind": "hard-negative"}
