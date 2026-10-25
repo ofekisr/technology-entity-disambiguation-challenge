@@ -28,7 +28,7 @@ Output: `Resolution{id, canonical_name, vendor, category, confidence, status, al
 ## Data structures
 
 - **Canonical entity:** id `vendor/product` (ascii slug, CPE WFN, immutable); display `<Vendor> <Product>`, vendor omitted when the product starts with it, symbols kept (`C++`, `.NET`) (D-33). Vendors are entities too (`microsoft/*`, category `vendor`).
-- **Sources (git):** `categories.yaml` (23 leaves), `vendors.csv` (parent, flagship), `entities.jsonl`, `aliases.csv` with provenance (D-34, D-42).
+- **Sources (git):** `categories.yaml` (23 leaves), `vendors.csv` (parent, flagship, prefix-only aliases such as `MS`, valid only before a product, D-41), `entities.jsonl`, `aliases.csv` with provenance (D-34, D-42).
 - **Snapshot (one SQLite file):** entities; `alias_norm → [(entity_id, strength)]`; `vendor_alias → vendor_id`; inverted index `token → aliases`; IDF; thresholds; calibration bins (D-20, D-35).
 - **Score:** IDF-weighted token-set Jaccard; the union counts alias tokens missing from the input (coverage penalty) (D-21).
 - **Code shape:** the build runs a list of `AliasSource` strategies (canonical names, vendor × product, category × product, vendor names, curated rows, concept combos).
@@ -48,7 +48,7 @@ Meaning is paid for once per product at build time, not once per request:
 - **Not at runtime:** embeddings and paid APIs stay offline as proposal sources; they score same-vendor siblings (Falcon vs Falcon, Sentinel × 3) as near-identical, where a confident wrong answer costs most (D-01, D-23).
 
 Status: built 26-10-26 with 130 concepts, 29 synonyms and 203 seeded concept edges (`source=seed`, pending review); synonym rewrite skips any word the index already knows (D-49).
-5 of 6 paraphrase gold cases resolve; `MS Teams` misses on the missing `MS` vendor alias, not on meaning.
+All 6 paraphrase gold cases resolve; `MS Teams` needed the `MS` prefix alias (G-06), not meaning.
 Concept-only input (`managed kubernetes`) returns `ambiguous` (EKS, GKE).
 
 ## Scale to 100k+
@@ -64,7 +64,7 @@ Concept-only input (`managed kubernetes`) returns `ambiguous` (EKS, GKE).
 A test guards that no hard negative resolves to a wrong id.
 - **Metrics (`make eval`):** precision on resolved (gate ≥ 0.98), coverage (target ≥ 0.90), F1, ambiguous rate, p50 / p99 latency, cost per 1M, threshold sweep, 10-bin reliability table + ECE (D-38, D-40).
 The gate checks precision only; coverage is reported against its target, not gated.
-- **Measured (seed + V4, 26-10-26):** 178 entities, 745 aliases, 195 cases: precision 1.00, coverage 0.78 (leave-one-out misses fall to `no_match` / `ambiguous`), p50 0.04 ms, p99 0.28 ms.
+- **Measured (seed + V4, 26-10-26):** 178 entities, 802 aliases, 195 cases: precision 1.00, coverage 0.79 (leave-one-out misses fall to `no_match` / `ambiguous`), p50 0.04 ms, p99 0.28 ms.
 - **Calibration:** bins frozen in the snapshot; fit on the hand-labeled dev set, since leave-one-out inflates precision (D-40).
 - **Production:** regression gate in CI; health SLOs unresolved < 5 %, ambiguous < 3 %, tier-1 precision ≥ 99 % [CONFIRM] (D-25, D-39).
 - **Stubbed:** durable ledger, review queue, monitoring, plugins, real-time overlay (D-30, D-43).
