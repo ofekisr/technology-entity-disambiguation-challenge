@@ -23,6 +23,7 @@ def _clean(raw: str) -> str:
     if trimmed in SYMBOL_TOKENS:
         return trimmed
     cleaned = NON_TOKEN_CHARS.sub("", trimmed).strip(".")
-    if VERSION_TOKEN.match(cleaned):
+    joined = cleaned.replace(".", "")
+    if VERSION_TOKEN.match(cleaned) or VERSION_TOKEN.match(joined):
         return ""
-    return cleaned.replace(".", "")
+    return joined

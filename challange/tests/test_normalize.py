@@ -11,6 +11,10 @@ def test_version_tokens_are_dropped() -> None:
     assert normalize("Apache Log4j 2.14") == "apache log4j"
 
 
+def test_v_prefixed_version_with_dots_is_dropped() -> None:
+    assert normalize("V.0") == normalize(normalize("V.0")) == ""
+
+
 def test_bare_integers_are_kept() -> None:
     assert normalize("Microsoft 365") == "microsoft 365"
     assert normalize("7-Zip") == "7 zip"
