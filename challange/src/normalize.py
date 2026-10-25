@@ -4,7 +4,7 @@ import unicodedata
 from src.constants import SYMBOL_TOKENS
 
 SEPARATORS = re.compile(r"[\s\-_/,;:()\[\]{}\"'!?&|*@<>=~`^\\]+")
-VERSION_TOKEN = re.compile(r"^v?\d[\d.]*$")
+VERSION_TOKEN = re.compile(r"^(v\d[\d.]*|\d+\.[\d.]*)$")
 NON_TOKEN_CHARS = re.compile(r"[^a-z0-9+#.]")
 
 

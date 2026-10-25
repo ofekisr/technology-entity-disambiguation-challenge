@@ -22,6 +22,7 @@ from src.constants import (
     CONFIDENCE_DECIMALS,
     STRENGTH_RANK,
     UNCATEGORIZED,
+    VENDOR_CATEGORY,
     Status,
     Strength,
 )
@@ -33,6 +34,7 @@ TRIGRAM = 3
 EXACT_QUALITY = 1.0
 SNAPSHOT_ENV = "IDX_SNAPSHOT"
 STRONG_RANK = STRENGTH_RANK[Strength.STRONG]
+WEAK_BASE = BASE_BY_STRENGTH[Strength.WEAK]
 
 Candidate = tuple[float, float, str]
 Scored = list[Candidate]
@@ -81,7 +83,7 @@ class Resolver:
     def _compute(self, input_norm: str, hints: Hints, filters: Filters) -> Resolution:
         if not input_norm:
             return Resolution.no_match(self.tables.index_version)
-        exact = self._exact(input_norm, hints, filters)
+        exact = self._exact(input_norm, hints, filters) or self._exact_without_numbers(input_norm, hints, filters)
         if exact:
             return self._decide(exact)
         return self._decide(self._fuzzy(input_norm, hints, filters))
@@ -91,6 +93,16 @@ class Resolver:
         if len(hits) == 1 and STRENGTH_RANK[hits[0].strength] >= STRONG_RANK:
             return [self._boosted(BASE_BY_STRENGTH[hits[0].strength], hits[0].entity_id, Hints())]
         return [self._boosted(BASE_BY_STRENGTH[hit.strength], hit.entity_id, hints) for hit in hits]
+
+    def _exact_without_numbers(self, input_norm: str, hints: Hints, filters: Filters) -> Scored:
+        stripped = " ".join(token for token in input_norm.split() if not token.isdigit())
+        if not stripped or stripped == input_norm:
+            return []
+        hits = self._exact(stripped, hints, filters)
+        return [self._boosted(min(raw, WEAK_BASE), entity_id, hints) for _, raw, entity_id in hits if not self._is_vendor(entity_id)]
+
+    def _is_vendor(self, entity_id: str) -> bool:
+        return self.tables.entities[entity_id].category == VENDOR_CATEGORY
 
     def _fuzzy(self, input_norm: str, hints: Hints, filters: Filters) -> Scored:
         vendor_id, residue = self._decompose(input_norm.split())

@@ -11,6 +11,11 @@ def test_version_tokens_are_dropped() -> None:
     assert normalize("Apache Log4j 2.14") == "apache log4j"
 
 
+def test_bare_integers_are_kept() -> None:
+    assert normalize("Microsoft 365") == "microsoft 365"
+    assert normalize("7-Zip") == "7 zip"
+
+
 def test_symbol_tokens_stay_distinct() -> None:
     assert [normalize(name) for name in ("C++", "C#", "C", ".NET")] == ["c++", "c#", "c", ".net"]
 
