@@ -10,3 +10,9 @@ def test_at_most_two_typo_tokens_are_corrected(tables: Tables) -> None:
 def test_known_and_short_tokens_are_left_alone(tables: Tables) -> None:
     corrector = TypoCorrector(tables.idf)
     assert (corrector.correct("falcon"), corrector.correct("eks")) == (None, None)
+
+
+def test_acronyms_are_kept_as_typed(tables: Tables) -> None:
+    corrector = TypoCorrector(tables.idf)
+    assert "paas" in corrector.corrections(["paas"])
+    assert corrector.corrections(["paas"], keep=frozenset({"paas"})) == {}

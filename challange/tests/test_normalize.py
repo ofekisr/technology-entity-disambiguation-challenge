@@ -2,7 +2,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from src.normalize import normalize, split_camel, tokens
+from src.normalize import case_signals, normalize, split_camel, tokens
 
 names = st.text(alphabet=st.characters(min_codepoint=32, max_codepoint=126), max_size=40)
 VERSION_SUFFIXES = (" 2.14", " v7", " 10.0.1")
@@ -52,3 +52,11 @@ def test_version_suffix_invariant(name: str, suffix: str) -> None:
 @pytest.mark.parametrize(("raw", "split"), [("RedHat", "Red Hat"), ("IISServer", "IIS Server"), ("log4j", "log4j"), ("AWS", "AWS")])
 def test_split_camel_breaks_words_at_inner_capitals(raw: str, split: str) -> None:
     assert split_camel(raw) == split
+
+
+def test_all_caps_words_long_enough_to_be_typo_corrected_are_read_as_acronyms() -> None:
+    assert case_signals("Jira PAAS on AWS", "jira paas on aws").acronyms == frozenset({"paas"})
+
+
+def test_camel_split_is_empty_when_it_changes_nothing() -> None:
+    assert case_signals("redhat", "redhat").split_text == ""

@@ -157,3 +157,7 @@ def test_camel_case_input_splits_at_capitals_when_the_typed_form_misses(resolver
 def test_lowercase_input_has_no_capitals_to_split_even_after_a_camel_case_hit(resolver: Resolver) -> None:
     resolver.resolve("RedHat")
     assert resolver.resolve("redhat").status is Status.NO_MATCH
+
+
+def test_all_caps_word_is_not_typo_corrected_into_another_concept(resolver: Resolver) -> None:
+    assert resolver.resolve("Jira PAAS").confidence < resolver.resolve("Jira paas").confidence

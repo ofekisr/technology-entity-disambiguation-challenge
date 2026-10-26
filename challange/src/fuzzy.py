@@ -23,7 +23,7 @@ class FuzzyAlias:
         hints = query.hints
         if vendor_id and hints.vendor is None:
             hints = Hints(vendor=vendor_id, category=hints.category)
-        corrections = self.typos.corrections(tokens)
+        corrections = self.typos.corrections(tokens, query.case.acronyms)
         weighted = dict(corrections.get(token, (token, EXACT_QUALITY)) for token in tokens)
         required = {corrections.get(token, (token, EXACT_QUALITY))[0] for token in residue} if vendor_id else set()
         scores = self._candidate_scores(weighted, required, query.filters)

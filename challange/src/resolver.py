@@ -9,7 +9,7 @@ from src.decide import Decider
 from src.fuzzy import FuzzyAlias
 from src.matchers import CamelCaseSplit, ExactAlias, FirstHit, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers
 from src.models import Filters, Hints, Resolution, load_sources
-from src.normalize import normalize, split_camel
+from src.normalize import CaseSignals, case_signals, normalize
 from src.ports import InMemoryLedger, InMemoryReviewQueue, LedgerKey, ResponseLedger, ReviewQueue
 from src.snapshot import load_snapshot, write_snapshot
 from src.tables import Tables
@@ -44,7 +44,7 @@ class Resolver:
 
     def resolve(self, name: str, *, hints: Hints | None = None, filters: Filters | None = None) -> Resolution:
         input_norm = normalize(name)
-        return self._cached(input_norm, split_norm(name, input_norm), self.canonical_hints(hints or Hints()), canonical_filters(filters))
+        return self._cached(input_norm, case_signals(name, input_norm), self.canonical_hints(hints or Hints()), canonical_filters(filters))
 
     def canonical_hints(self, hints: Hints) -> Hints:
         if hints.vendor is None:
@@ -52,12 +52,12 @@ class Resolver:
         vendor_id = self.tables.vendor_aliases.get(normalize(hints.vendor), hints.vendor)
         return Hints(vendor=vendor_id, category=hints.category)
 
-    def _resolve_normalized(self, input_norm: str, split: str, hints: Hints, filters: Filters) -> Resolution:
-        key = LedgerKey(input_norm, hints, filters, self.tables.index_version, split)
+    def _resolve_normalized(self, input_norm: str, case: CaseSignals, hints: Hints, filters: Filters) -> Resolution:
+        key = LedgerKey(input_norm, hints, filters, self.tables.index_version, case)
         recorded = self.ledger.get(key)
         if recorded is not None:
             return recorded
-        result = self._compute(Query(input_norm, hints, filters, split))
+        result = self._compute(Query(input_norm, hints, filters, case))
         self.ledger.record(key, result)
         if result.status is Status.NO_MATCH and input_norm:
             self.review_queue.enqueue(input_norm, self.tables.index_version)
@@ -67,11 +67,6 @@ class Resolver:
         if not query.text:
             return Resolution.no_match(self.tables.index_version)
         return self.decider.decide(self.matcher.match(query))
-
-
-def split_norm(name: str, input_norm: str) -> str:
-    split = normalize(split_camel(name))
-    return split if split != input_norm else ""
 
 
 def canonical_filters(filters: Filters | None) -> Filters:

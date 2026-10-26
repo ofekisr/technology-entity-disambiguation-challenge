@@ -10,8 +10,8 @@ from src.constants import BASE_BY_STRENGTH, CONFIDENCE_DECIMALS, DATA_DIR, MAX_A
 from src.fuzzy import FuzzyAlias
 from src.matchers import CamelCaseSplit, ExactAlias, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers, joined_variants
 from src.models import Filters, Hints, load_sources
-from src.normalize import normalize
-from src.resolver import Resolver, canonical_filters, split_norm
+from src.normalize import case_signals, normalize
+from src.resolver import Resolver, canonical_filters
 from src.tables import Tables
 from src.typos import EXACT_QUALITY, TypoCorrector
 
@@ -36,7 +36,7 @@ GROUPS = {
     "cleaning": Group("Cleaning and retries", "Versions are dropped, split words are joined, CamelCase is split at inner capitals, a trailing number is retried without it."),
     "context": Group("Same name, different products", "A bare shared name is ambiguous; a hint, a filter or a context word picks one (D-48)."),
     "semantic": Group("Paraphrases (semantic layer)", "Vendor × concept phrases are compiled into aliases at build time; slang is rewritten at query time (D-49)."),
-    "typo": Group("Typos", "Fuzzy matching fixes small misspellings, weighted by how rare each word is; words of 3 letters or fewer are never corrected."),
+    "typo": Group("Typos", "Fuzzy matching fixes small misspellings, weighted by how rare each word is; words of 3 letters or fewer and ALL-CAPS acronyms are never corrected."),
     "outside": Group("Must not resolve", "Products outside the catalog stay unresolved even when they share words with known ones."),
     "known-limit": Group("Known limits", "Cases the resolver misses today, tracked in docs/GAPS.md."),
 }
@@ -84,6 +84,7 @@ CASES = (
     Case("Crowdstrik Falcon", "typo", "resolved", "crowdstrike/falcon", "vendor misspelled"),
     Case("Crowdstrike Falcn", "typo", "resolved", "crowdstrike/falcon", "rank above 1, confidence stays raw"),
     Case("Kubernets", "typo", "resolved", "kubernetes/kubernetes", "one word, one letter missing"),
+    Case("Jira PAAS", "typo", "no_match", None, "ALL-CAPS acronym kept as typed, not fixed to saas (D-50b)"),
     Case("AWS Foo", "outside", "no_match", None, "known vendor, unknown product"),
     Case("Amazon Prime", "outside", "no_match", None, "the vendor word alone is not enough"),
     Case("Microsoft 365", "outside", "no_match", None, "not in the catalog"),
@@ -123,7 +124,7 @@ class Tracer:
     def trace(self, case: Case) -> Json:
         hints = self.resolver.canonical_hints(case.hints or Hints())
         input_norm = normalize(case.input)
-        query = Query(input_norm, hints, canonical_filters(case.filters), split_norm(case.input, input_norm))
+        query = Query(input_norm, hints, canonical_filters(case.filters), case_signals(case.input, input_norm))
         steps, hits, winner = self._run_steps(query)
         result = self.resolver.resolve(case.input, hints=case.hints, filters=case.filters)
         rewritten = self.rewriter.rewrite(query.text)
@@ -166,7 +167,7 @@ class Tracer:
     def _detail(self, name: str, query: Query, hits: Scored) -> Json:
         if name == "FuzzyAlias":
             return self._fuzzy_detail(query, hits)
-        looked_up = {"ExactAlias": query.text, "JoinedWords": self._joined_hit(query.text), "CamelCaseSplit": query.split_text or None, "WithoutNumbers": _without_numbers(query.text)}[name]
+        looked_up = {"ExactAlias": query.text, "JoinedWords": self._joined_hit(query.text), "CamelCaseSplit": query.case.split_text or None, "WithoutNumbers": _without_numbers(query.text)}[name]
         detail: Json = {"looked_up": looked_up, "alias_rows": self._alias_rows(looked_up), "candidates": _candidates(hits)}
         if name == "WithoutNumbers":
             detail["note"] = "vendor entities dropped, capped at weak 0.8"
@@ -182,7 +183,7 @@ class Tracer:
     def _fuzzy_detail(self, query: Query, hits: Scored) -> Json:
         tokens = query.text.split()
         vendor_id, residue = self.fuzzy.decompose(tokens)
-        corrections = self.fuzzy.typos.corrections(tokens)
+        corrections = self.fuzzy.typos.corrections(tokens, query.case.acronyms)
         weighted = dict(corrections.get(token, (token, EXACT_QUALITY)) for token in tokens)
         required = {corrections.get(token, (token, EXACT_QUALITY))[0] for token in residue} if vendor_id else set()
         best = self._best_aliases(weighted, required, query.filters)

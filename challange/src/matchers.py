@@ -5,6 +5,7 @@ from typing import Protocol
 from src.catalog import Catalog, Scored
 from src.constants import BASE_BY_STRENGTH, STRENGTH_RANK, Strength
 from src.models import Filters, Hints
+from src.normalize import CaseSignals
 from src.tables import Tables
 
 STRONG_RANK = STRENGTH_RANK[Strength.STRONG]
@@ -16,7 +17,7 @@ class Query:
     text: str
     hints: Hints
     filters: Filters
-    split_text: str = ""
+    case: CaseSignals = CaseSignals()
 
 
 class Matcher(Protocol):
@@ -52,9 +53,9 @@ class CamelCaseSplit:
         self.exact = exact
 
     def match(self, query: Query) -> Scored:
-        if not query.split_text:
+        if not query.case.split_text:
             return []
-        return self.exact.match(replace(query, text=query.split_text, split_text=""))
+        return self.exact.match(replace(query, text=query.case.split_text, case=replace(query.case, split_text="")))
 
 
 class WithoutNumbers:

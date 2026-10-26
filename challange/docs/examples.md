@@ -80,13 +80,14 @@ Vendor × concept phrases are compiled into aliases at build time; slang is rewr
 
 ## Typos
 
-Fuzzy matching fixes small misspellings, weighted by how rare each word is; words of 3 letters or fewer are never corrected.
+Fuzzy matching fixes small misspellings, weighted by how rare each word is; words of 3 letters or fewer and ALL-CAPS acronyms are never corrected.
 
 | Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
 | `Crowdstrik Falcon` (vendor misspelled) | B · FuzzyAlias | resolved `crowdstrike/falcon` · 0.948 | raw 0.948 · margin 0.948 | ✅ |
 | `Crowdstrike Falcn` (rank above 1, confidence stays raw) | B · FuzzyAlias | resolved `crowdstrike/falcon` · 0.904 | raw 0.904 · +bonus → rank 1.054 · margin 1.054 | ✅ |
 | `Kubernets` (one word, one letter missing) | B · FuzzyAlias | resolved `kubernetes/kubernetes` · 0.8889 | raw 0.8889 · margin 0.3527 | ✅ |
+| `Jira PAAS` (ALL-CAPS acronym kept as typed, not fixed to saas (D-50b)) | B · FuzzyAlias | no_match | best raw 0.4552 is below t_low 0.5 | ✅ |
 
 ## Must not resolve
 

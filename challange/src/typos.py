@@ -20,10 +20,10 @@ class TypoCorrector:
         self.vocabulary = idf
         self._index = _trigram_index(idf)
 
-    def corrections(self, tokens: list[str]) -> dict[str, Correction]:
+    def corrections(self, tokens: list[str], keep: frozenset[str] = frozenset()) -> dict[str, Correction]:
         found: dict[str, Correction] = {}
         for token in tokens:
-            corrected = self.correct(token)
+            corrected = None if token in keep else self.correct(token)
             if corrected and len(found) < MAX_TYPO_TOKENS:
                 found[token] = corrected
         return found

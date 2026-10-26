@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from src.models import Filters, Hints, Resolution
+from src.normalize import CaseSignals
 
 
 @dataclass(frozen=True)
@@ -10,7 +11,7 @@ class LedgerKey:
     hints: Hints
     filters: Filters
     index_version: str
-    split_norm: str = ""
+    case: CaseSignals = CaseSignals()
 
 
 class ResponseLedger(Protocol):
