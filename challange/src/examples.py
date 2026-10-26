@@ -7,7 +7,6 @@ from pathlib import Path
 from src.build import build_tables
 from src.catalog import Catalog, Scored
 from src.constants import BASE_BY_STRENGTH, CONFIDENCE_DECIMALS, DATA_DIR, MAX_ALTERNATIVES
-from src.eval import load_hand_cases
 from src.fuzzy import FuzzyAlias
 from src.matchers import ExactAlias, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers, joined_variants
 from src.models import Filters, Hints, load_sources
@@ -23,23 +22,29 @@ GUIDE = DOCS_DIR / "solution.guide.html"
 GUIDE_DATA = re.compile(r'(<script type="application/json" id="examples-data">).*?(</script>)', re.S)
 STEPS_A = ("ExactAlias", "JoinedWords", "WithoutNumbers")
 STEP_ORDER = (*(f"A · {name}" for name in STEPS_A), *(f"B · {name}" for name in (*STEPS_A, "FuzzyAlias")))
-KIND_TITLES = {
-    "exact": "Exact names",
-    "near-collision": "Near-collisions",
-    "hard-negative": "Hard negatives",
-    "typo": "Typos",
-    "paraphrase": "Paraphrases (semantic layer)",
-    "normalization": "Normalization retries",
-    "hints-filters": "Hints and filters",
-    "unknown": "Unknown names",
-    "known-limit": "Known limits",
+@dataclass(frozen=True)
+class Group:
+    title: str
+    shows: str
+
+
+GROUPS = {
+    "exact": Group("Exact name or alias", "The input is already in the alias table; the alias strength sets the score: canonical 1.0, curated 0.97, generated 0.9, weak 0.8."),
+    "vendor": Group("Vendor names and prefixes", "A bare vendor name maps to the vendor entity; a prefix such as MS only counts next to a product (D-41)."),
+    "look-alike": Group("Look-alikes kept apart", "Names that share letters or words but are different products each resolve to their own id."),
+    "cleaning": Group("Cleaning and retries", "Versions are dropped, split words are joined, a trailing number is retried without it; retries are capped below an exact hit."),
+    "context": Group("Same name, different products", "A bare shared name is ambiguous; a hint, a filter or a context word picks one (D-48)."),
+    "semantic": Group("Paraphrases (semantic layer)", "Vendor × concept phrases are compiled into aliases at build time; slang is rewritten at query time (D-49)."),
+    "typo": Group("Typos", "Fuzzy matching fixes small misspellings, weighted by how rare each word is; words of 3 letters or fewer are never corrected."),
+    "outside": Group("Must not resolve", "Products outside the catalog stay unresolved even when they share words with known ones."),
+    "known-limit": Group("Known limits", "Cases the resolver misses today, tracked in docs/GAPS.md."),
 }
 
 
 @dataclass(frozen=True)
 class Case:
     input: str
-    kind: str
+    group: str
     expected_status: str
     expected_id: str | None
     note: str | None = None
@@ -47,20 +52,44 @@ class Case:
     filters: Filters | None = None
 
 
-DEMOS = (
-    Case("Sentinel", "hints-filters", "resolved", "microsoft/sentinel", hints=Hints(vendor="Microsoft")),
-    Case("Falcon", "hints-filters", "resolved", "crowdstrike/falcon", hints=Hints(category="edr")),
-    Case("Sentinel", "hints-filters", "resolved", "hashicorp/sentinel", filters=Filters(vendors=("hashicorp",))),
-    Case("Crowdstrike Falcn", "typo", "resolved", "crowdstrike/falcon", note="rank above 1, confidence stays raw"),
-    Case("Windows 10", "normalization", "resolved", "microsoft/windows"),
-    Case("Log4j 2", "normalization", "resolved", "apache/log4j"),
-    Case("Share Point", "normalization", "resolved", "microsoft/sharepoint"),
-    Case("MS", "normalization", "ambiguous", None),
-    Case("managed kubernetes", "paraphrase", "ambiguous", None),
-    Case("Fortinet firewall", "paraphrase", "resolved", "fortinet/fortigate"),
-    Case("AWS EKS cluster", "known-limit", "resolved", "aws/eks", note="G-05: an extra generic word"),
-    Case("Crwdstrk Falcon", "known-limit", "resolved", "crowdstrike/falcon", note="more than 2 letters wrong"),
-    Case("RedHat", "known-limit", "resolved", "redhat/enterprise_linux", note="joined word, split not handled"),
+CASES = (
+    Case("CrowdStrike Falcon", "exact", "resolved", "crowdstrike/falcon", "canonical name"),
+    Case("Amazon Elastic Kubernetes Service", "exact", "resolved", "aws/eks", "curated full name"),
+    Case("F5 NGINX", "exact", "resolved", "nginx/nginx", "generated vendor × product"),
+    Case("EKS", "exact", "resolved", "aws/eks", "weak: a bare acronym"),
+    Case("Microsoft", "vendor", "resolved", "microsoft/*", "vendor entity"),
+    Case("MS Teams", "vendor", "resolved", "microsoft/teams", "prefix next to a product (G-06)"),
+    Case("MS", "vendor", "ambiguous", None, "a prefix alone never resolves"),
+    Case("C", "look-alike", "resolved", "c/c"),
+    Case("C#", "look-alike", "resolved", "csharp/csharp", "symbols are kept"),
+    Case("C++", "look-alike", "resolved", "cpp/cpp", "symbols are kept"),
+    Case("Microsoft Copilot", "look-alike", "resolved", "microsoft/copilot"),
+    Case("GitHub Copilot", "look-alike", "resolved", "github/copilot"),
+    Case("SentinelOne", "look-alike", "resolved", "sentinelone/sentinelone", "not Microsoft Sentinel"),
+    Case("Apache Log4j 2.14", "cleaning", "resolved", "apache/log4j", "dotted version dropped"),
+    Case("Log4j 2", "cleaning", "resolved", "apache/log4j", "bare number kept"),
+    Case("Share Point", "cleaning", "resolved", "microsoft/sharepoint", "split words joined"),
+    Case("Windows 10", "cleaning", "resolved", "microsoft/windows", "retried without the number"),
+    Case("Sentinel", "context", "ambiguous", None, "two products share the name"),
+    Case("Sentinel", "context", "resolved", "microsoft/sentinel", "vendor hint", hints=Hints(vendor="Microsoft")),
+    Case("Sentinel", "context", "resolved", "hashicorp/sentinel", "vendor filter", filters=Filters(vendors=("hashicorp",))),
+    Case("Sentinel SIEM", "context", "resolved", "microsoft/sentinel", "context word in the input"),
+    Case("Falcon", "context", "resolved", "crowdstrike/falcon", "category hint", hints=Hints(category="edr")),
+    Case("AWS managed Kubernetes", "semantic", "resolved", "aws/eks", "build-time concept alias"),
+    Case("Fortinet firewall", "semantic", "resolved", "fortinet/fortigate", "build-time concept alias"),
+    Case("Amazon managed k8", "semantic", "resolved", "aws/eks", "k8 rewritten to kubernetes"),
+    Case("managed kubernetes", "semantic", "ambiguous", None, "no vendor: a concept alone is never an alias"),
+    Case("Crowdstrik Falcon", "typo", "resolved", "crowdstrike/falcon", "vendor misspelled"),
+    Case("Crowdstrike Falcn", "typo", "resolved", "crowdstrike/falcon", "rank above 1, confidence stays raw"),
+    Case("Kubernets", "typo", "resolved", "kubernetes/kubernetes", "one word, one letter missing"),
+    Case("AWS Foo", "outside", "no_match", None, "known vendor, unknown product"),
+    Case("Amazon Prime", "outside", "no_match", None, "the vendor word alone is not enough"),
+    Case("Microsoft 365", "outside", "no_match", None, "not in the catalog"),
+    Case("Splunk Enterprise Security", "outside", "no_match", None, "shares words with Splunk Enterprise"),
+    Case("Acme Widget Pro", "outside", "no_match", None, "nothing known"),
+    Case("AWS EKS cluster", "known-limit", "resolved", "aws/eks", "G-05: an extra generic word"),
+    Case("Crwdstrk Falcon", "known-limit", "resolved", "crowdstrike/falcon", "more than 2 letters wrong"),
+    Case("RedHat", "known-limit", "resolved", "redhat/enterprise_linux", "joined word, split not handled"),
 )
 
 
@@ -228,25 +257,19 @@ def _without_numbers(text: str) -> str | None:
 def _verdict(case: Case, result: Json) -> str:
     if result["status"] == case.expected_status and result["id"] == case.expected_id:
         return "pass"
-    if case.kind == "hard-negative" and result["status"] != "resolved":
+    if case.group == "outside" and result["status"] != "resolved":
         return "safe"
-    return "gap" if case.kind == "known-limit" else "fail"
+    return "gap" if case.group == "known-limit" else "fail"
 
 
-def all_cases(data_dir: Path = DATA_DIR) -> list[Case]:
-    gold = load_hand_cases(data_dir / "gold.jsonl")
-    return [Case(g.input, g.kind, g.expected_status.value, g.expected_id) for g in gold] + list(DEMOS)
-
-
-def build_cases(tracer: Tracer, data_dir: Path = DATA_DIR) -> list[Json]:
+def build_cases(tracer: Tracer) -> list[Json]:
     cases: list[Json] = []
-    for index, case in enumerate(all_cases(data_dir)):
+    for index, case in enumerate(CASES):
         trace = tracer.trace(case)
         expected = {"status": case.expected_status, "id": case.expected_id}
-        cases.append({"key": f"c{index}", "input": case.input, "kind": case.kind, "note": case.note,
+        cases.append({"key": f"c{index}", "input": case.input, "group": case.group, "note": case.note,
                       "expected": expected, "verdict": _verdict(case, trace["result"]), **trace})
-    kinds = list(KIND_TITLES)
-    return sorted(cases, key=lambda c: (kinds.index(str(c["kind"])), str(c["input"]).lower()))
+    return cases
 
 
 def _label(case: Json) -> str:
@@ -294,9 +317,9 @@ def _md_row(case: Json) -> str:
     return f"| {_label(case)}{note} | {case['winner'] or '—'} | {_result_text(case['result'])} | {_why(case['decision'])} | {_expected_text(case)} |"
 
 
-def _md_table(kind: str, group: list[Json]) -> list[str]:
+def _md_table(key: str, group: list[Json]) -> list[str]:
     rows = [_md_row(case) for case in group]
-    return [f"## {KIND_TITLES[kind]}", "", "| Input | Matched at | Final answer | Why | Expected |", "|---|---|---|---|---|", *rows, ""]
+    return [f"## {GROUPS[key].title}", "", GROUPS[key].shows, "", "| Input | Matched at | Final answer | Why | Expected |", "|---|---|---|---|---|", *rows, ""]
 
 
 def _md_step(step: Json) -> list[str]:
@@ -323,7 +346,7 @@ def _md_decide(case: Json, tables: Tables) -> str:
 
 def _md_trace(case: Json, tables: Tables) -> list[str]:
     rewritten = f" · rewritten: `{case['rewritten']}`" if case["rewritten"] else ""
-    lines = [f"### {KIND_TITLES[str(case['kind'])]}: {_label(case)}", "", f"Normalized: `{case['normalized']}`{rewritten}", ""]
+    lines = [f"### {GROUPS[str(case['group'])].title}: {_label(case)}", "", f"Normalized: `{case['normalized']}`{rewritten}", ""]
     for step in case["steps"]:
         lines += _md_step(step) if step["outcome"] != "skipped" else []
     lines += [_md_decide(case, tables)] if "rule" not in case["decision"] else []
@@ -332,18 +355,19 @@ def _md_trace(case: Json, tables: Tables) -> list[str]:
 
 def write_markdown(cases: list[Json], tables: Tables, path: Path) -> None:
     lines = _md_header(tables)
-    groups = {kind: [c for c in cases if c["kind"] == kind] for kind in KIND_TITLES}
-    for kind, group in groups.items():
-        lines += _md_table(kind, group) if group else []
-    lines += ["## Appendix — optional (+5 minutes)", "", "One full trace per kind: the data each step read.", ""]
+    groups = {key: [c for c in cases if c["group"] == key] for key in GROUPS}
+    for key, group in groups.items():
+        lines += _md_table(key, group) if group else []
+    lines += ["## Appendix — optional (+5 minutes)", "", "One full trace per group: the data each step read.", ""]
     for group in filter(None, groups.values()):
         lines += _md_trace(max(group, key=lambda c: STEP_ORDER.index(c["winner"]) if c["winner"] else -1), tables)
     path.write_text("\n".join(lines))
 
 
 def write_json(cases: list[Json], tables: Tables, path: Path) -> str:
+    groups = {key: {"title": group.title, "shows": group.shows} for key, group in GROUPS.items()}
     payload = {"index_version": tables.index_version, "aliases": len(tables.aliases),
-               "thresholds": tables.thresholds.model_dump(), "cases": cases}
+               "thresholds": tables.thresholds.model_dump(), "groups": groups, "cases": cases}
     text = json.dumps(payload, ensure_ascii=False)
     path.write_text(text)
     return text

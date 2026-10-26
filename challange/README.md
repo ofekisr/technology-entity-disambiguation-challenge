@@ -12,7 +12,7 @@ make resolve NAME="Amazon Web Services"
 ```
 
 `make eval` prints precision, coverage, F1, latency, a threshold sweep and the reliability table.
-`make examples` traces 61 cases through the resolver into `docs/examples.md` and `docs/examples.json` (and refreshes the guide's Examples tab when the guide is present).
+`make examples` traces 37 curated cases in 9 groups (one per mechanism, following the resolve flow) through the resolver into `docs/examples.md` and `docs/examples.json` (and refreshes the guide's Examples tab when the guide is present).
 
 ## Run (Docker)
 
