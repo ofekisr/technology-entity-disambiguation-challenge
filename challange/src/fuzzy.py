@@ -19,7 +19,7 @@ class FuzzyAlias:
 
     def match(self, query: Query) -> Scored:
         tokens = query.text.split()
-        vendor_id, residue = self._decompose(tokens)
+        vendor_id, residue = self.decompose(tokens)
         hints = query.hints
         if vendor_id and hints.vendor is None:
             hints = Hints(vendor=vendor_id, category=hints.category)
@@ -30,7 +30,7 @@ class FuzzyAlias:
         top = sorted(scores.items(), key=lambda item: (-item[1], item[0]))[: self.tables.thresholds.top_k]
         return [self.catalog.boosted(score, entity_id, hints) for entity_id, score in top]
 
-    def _decompose(self, tokens: list[str]) -> tuple[str | None, list[str]]:
+    def decompose(self, tokens: list[str]) -> tuple[str | None, list[str]]:
         for size in range(len(tokens), 0, -1):
             vendor_id = self.tables.vendor_aliases.get(" ".join(tokens[:size]))
             if vendor_id:
@@ -43,16 +43,16 @@ class FuzzyAlias:
             alias_tokens = set(alias_norm.split())
             if required and not required & alias_tokens:
                 continue
-            score = self._jaccard(weighted, alias_tokens)
+            score = self.jaccard(weighted, alias_tokens)
             for hit in self.tables.aliases[alias_norm]:
                 if self.catalog.passes(hit.entity_id, filters):
                     scores[hit.entity_id] = max(scores[hit.entity_id], score)
         return scores
 
-    def _jaccard(self, weighted: WeightedTokens, alias_tokens: set[str]) -> float:
-        common = sum(self._idf(token) * weighted[token] for token in sorted(weighted) if token in alias_tokens)
-        union = sum(self._idf(token) for token in sorted(set(weighted) | alias_tokens))
+    def jaccard(self, weighted: WeightedTokens, alias_tokens: set[str]) -> float:
+        common = sum(self.idf(token) * weighted[token] for token in sorted(weighted) if token in alias_tokens)
+        union = sum(self.idf(token) for token in sorted(set(weighted) | alias_tokens))
         return common / union if union else 0.0
 
-    def _idf(self, token: str) -> float:
+    def idf(self, token: str) -> float:
         return self.tables.idf.get(token, self._unknown_idf)

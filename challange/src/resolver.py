@@ -43,9 +43,9 @@ class Resolver:
         self._cached = lru_cache(maxsize=LRU_MAXSIZE)(self._resolve_normalized)
 
     def resolve(self, name: str, *, hints: Hints | None = None, filters: Filters | None = None) -> Resolution:
-        return self._cached(normalize(name), self._canonical_hints(hints or Hints()), _canonical_filters(filters))
+        return self._cached(normalize(name), self.canonical_hints(hints or Hints()), canonical_filters(filters))
 
-    def _canonical_hints(self, hints: Hints) -> Hints:
+    def canonical_hints(self, hints: Hints) -> Hints:
         if hints.vendor is None:
             return hints
         vendor_id = self.tables.vendor_aliases.get(normalize(hints.vendor), hints.vendor)
@@ -68,7 +68,7 @@ class Resolver:
         return self.decider.decide(self.matcher.match(query))
 
 
-def _canonical_filters(filters: Filters | None) -> Filters:
+def canonical_filters(filters: Filters | None) -> Filters:
     chosen = filters or Filters()
     return chosen.model_copy(update={"vendors": tuple(sorted(set(chosen.vendors))),
                                      "categories": tuple(sorted(set(chosen.categories)))})

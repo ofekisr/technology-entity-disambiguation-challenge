@@ -1,13 +1,13 @@
 # Resolve examples
 
-Every case below was run through the real resolver on index `9d402f5cc5a9ad38` (178 entities, 802 aliases).
+Every case below ran through the real resolver on index `9d402f5cc5a9ad38` (178 entities, 802 aliases).
 Each row shows where the match happened and the numbers behind the answer.
 Rule (D-22, D-48): `resolved` iff raw score ≥ 0.75 and margin ≥ 0.15; `ambiguous` iff score ≥ 0.5; else `no_match`.
 Hints and the vendor found in the input add a bonus of 0.15 that ranks and widens the margin, never the raw score.
 
 Steps: **A** = exact on the input as typed (ExactAlias, JoinedWords, WithoutNumbers); **B** = SynonymRewrite, then the exact steps again and FuzzyAlias.
 
-Interactive version with full traces: guide › Examples tab.
+Regenerate with `make examples`. Interactive version with full traces: guide › Examples tab.
 
 ## Exact names
 

@@ -3,7 +3,7 @@ VENV := .venv
 BIN := $(VENV)/bin
 NAME ?= AWS
 
-.PHONY: setup test resolve eval build validate
+.PHONY: setup test resolve eval build validate examples
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -23,3 +23,6 @@ build:
 
 validate:
 	@$(BIN)/idx validate
+
+examples:
+	@$(BIN)/python -m src.examples

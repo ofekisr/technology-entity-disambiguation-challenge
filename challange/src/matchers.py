@@ -39,7 +39,7 @@ class JoinedWords:
         self.exact = exact
 
     def match(self, query: Query) -> Scored:
-        for variant in _joined_variants(query.text.split()):
+        for variant in joined_variants(query.text.split()):
             hits = self.exact.match(replace(query, text=variant))
             if hits:
                 return hits
@@ -87,6 +87,6 @@ class FirstHit:
         return []
 
 
-def _joined_variants(tokens: list[str]) -> Iterator[str]:
+def joined_variants(tokens: list[str]) -> Iterator[str]:
     for index in range(len(tokens) - 1):
         yield " ".join([*tokens[:index], tokens[index] + tokens[index + 1], *tokens[index + 2 :]])
