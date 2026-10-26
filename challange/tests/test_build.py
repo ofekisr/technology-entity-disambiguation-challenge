@@ -63,6 +63,11 @@ def test_generated_never_shadows_manual() -> None:
     assert _targets(_sources(), "microsoft copilot") == {"microsoft/copilot"}
 
 
+def test_alias_naming_a_vendor_goes_to_that_vendors_own_product_over_a_child_vendors() -> None:
+    assert _targets(_sources(), "ms copilot") == {"microsoft/copilot"}
+    assert _targets(_sources(), "copilot") == {"github/copilot", "microsoft/copilot"}
+
+
 def test_short_alias_is_weak() -> None:
     hits = build_tables(_sources()).aliases["eks"]
     assert [hit.strength for hit in hits] == [Strength.WEAK]

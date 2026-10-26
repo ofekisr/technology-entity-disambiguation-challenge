@@ -1,6 +1,6 @@
 # Resolve examples
 
-Every case below ran through the real resolver on index `7fb6d0da4a2ac6f9` (178 entities, 802 aliases).
+Every case below ran through the real resolver on index `10666d6313a76ff7` (178 entities, 802 aliases).
 Each row shows where the match happened and the numbers behind the answer.
 Rule (D-22, D-48): `resolved` iff raw score ≥ 0.75 and margin ≥ 0.15; `ambiguous` iff raw score ≥ 0.5 (D-51: candidates below are dropped); else `no_match`.
 Hints and the vendor found in the input add a bonus of 0.15 that ranks and widens the margin, never the raw score.
@@ -29,6 +29,7 @@ A bare vendor name maps to the vendor entity; a prefix such as MS only counts ne
 | `Microsoft` (vendor entity) | A · ExactAlias | resolved `microsoft/*` · 1.0 | raw 1.0 · margin 1.0 | ✅ |
 | `MS Teams` (prefix next to a product (G-06)) | A · ExactAlias | resolved `microsoft/teams` · 0.9 | raw 0.9 · margin 0.9 | ✅ |
 | `MS` (a prefix alone never resolves) | B · FuzzyAlias | no_match | best raw 0.4442 is below t_low 0.5 | ✅ |
+| `MS Copilot` (the named vendor's own product beats GitHub's, a child of Microsoft) | A · ExactAlias | resolved `microsoft/copilot` · 0.9 | raw 0.9 · margin 0.9 | ✅ |
 
 ## Look-alikes kept apart
 

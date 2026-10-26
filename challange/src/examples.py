@@ -61,6 +61,7 @@ CASES = (
     Case("Microsoft", "vendor", "resolved", "microsoft/*", "vendor entity"),
     Case("MS Teams", "vendor", "resolved", "microsoft/teams", "prefix next to a product (G-06)"),
     Case("MS", "vendor", "no_match", None, "a prefix alone never resolves"),
+    Case("MS Copilot", "vendor", "resolved", "microsoft/copilot", "the named vendor's own product beats GitHub's, a child of Microsoft"),
     Case("C", "look-alike", "resolved", "c/c"),
     Case("C#", "look-alike", "resolved", "csharp/csharp", "symbols are kept"),
     Case("C++", "look-alike", "resolved", "cpp/cpp", "symbols are kept"),

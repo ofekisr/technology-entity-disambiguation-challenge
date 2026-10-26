@@ -170,3 +170,8 @@ def test_synonym_rewritten_hit_is_capped_at_weak(resolver: Resolver) -> None:
 
 def test_fuzzy_without_a_rewrite_keeps_its_own_score(resolver: Resolver) -> None:
     assert resolver.resolve("Crowdstrik Falcon").confidence > BASE_BY_STRENGTH[Strength.WEAK]
+
+
+def test_parent_vendor_prefix_picks_the_parents_own_product(resolver: Resolver) -> None:
+    assert resolver.resolve("MS Copilot").id == "microsoft/copilot"
+    assert resolver.resolve("Copilot").status is Status.AMBIGUOUS

@@ -74,7 +74,19 @@ def build_alias_index(
     sources: Sources, records: dict[str, EntityRecord], alias_sources: Sequence[AliasSource] = DEFAULT_ALIAS_SOURCES
 ) -> dict[str, tuple[AliasHit, ...]]:
     merged = _strongest_per_entity(_all_aliases(sources, records, alias_sources))
-    return {alias_norm: _shadow(merged[alias_norm]) for alias_norm in sorted(merged)}
+    vendors = build_vendor_aliases(sources)
+    return {alias_norm: _shadow(_named_vendor_first(alias_norm, merged[alias_norm], records, vendors)) for alias_norm in sorted(merged)}
+
+
+def _named_vendor_first(alias_norm: str, hits: dict[str, Strength], records: dict[str, EntityRecord], vendors: dict[str, str]) -> dict[str, Strength]:
+    named = _named_vendor(alias_norm.split(), vendors)
+    own = {entity_id: strength for entity_id, strength in hits.items() if records[entity_id].vendor_id == named}
+    return own or hits
+
+
+def _named_vendor(tokens: list[str], vendors: dict[str, str]) -> str | None:
+    prefixes = (" ".join(tokens[:size]) for size in range(len(tokens), 0, -1))
+    return next((vendors[prefix] for prefix in prefixes if prefix in vendors), None)
 
 
 def build_vendor_aliases(sources: Sources) -> dict[str, str]:
