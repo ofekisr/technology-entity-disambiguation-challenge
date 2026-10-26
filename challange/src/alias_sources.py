@@ -49,11 +49,12 @@ class VendorNames:
 class ConceptCombos:
     def aliases(self, sources: Sources, records: Records) -> Iterator[AliasTriple]:
         vendors = {vendor.vendor_id: vendor for vendor in sources.vendors}
-        floor = sources.thresholds.concept_min_weight
+        thresholds = sources.thresholds
         for row in sources.entity_concepts:
-            if row.weight >= floor and row.entity_id in records:
+            if row.weight >= thresholds.concept_min_weight and row.entity_id in records:
+                strength = Strength.GENERATED if row.weight >= thresholds.concept_generated_weight else Strength.WEAK
                 for name in _names_with_parent(vendors, records[row.entity_id].vendor_id):
-                    yield f"{name} {row.phrase}", row.entity_id, Strength.WEAK
+                    yield f"{name} {row.phrase}", row.entity_id, strength
 
 
 class CuratedAliases:

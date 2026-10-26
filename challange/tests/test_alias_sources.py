@@ -50,11 +50,11 @@ def test_curated_aliases_keep_their_strength(sources: Sources, records: dict[str
 
 def test_concept_combos_pair_vendor_names_with_phrases(sources: Sources, records: dict[str, EntityRecord]) -> None:
     found = _aliases_of(ConceptCombos(), sources, records, "aws/eks")
-    assert {("AWS managed kubernetes", Strength.WEAK), ("Amazon managed kubernetes", Strength.WEAK)} <= found
+    assert {("AWS managed kubernetes", Strength.GENERATED), ("Amazon managed kubernetes", Strength.GENERATED)} <= found
 
 
 def test_concept_combos_never_emit_the_bare_phrase(sources: Sources, records: dict[str, EntityRecord]) -> None:
-    assert ("managed kubernetes", Strength.WEAK) not in _aliases_of(ConceptCombos(), sources, records, "aws/eks")
+    assert "managed kubernetes" not in {alias for alias, _ in _aliases_of(ConceptCombos(), sources, records, "aws/eks")}
 
 
 def test_concept_combos_skip_low_weight_edges(sources: Sources, records: dict[str, EntityRecord]) -> None:
@@ -65,3 +65,15 @@ def test_concept_combos_skip_low_weight_edges(sources: Sources, records: dict[st
 def test_build_runs_only_the_given_sources(sources: Sources) -> None:
     aliases = build_tables(sources, alias_sources=(CuratedAliases(),)).aliases
     assert "elastic kubernetes service" in aliases and "aws eks" not in aliases
+
+
+def _concept_strengths(edge: EntityConceptRow, sources: Sources, records: dict[str, EntityRecord]) -> set[Strength]:
+    only_edge = sources.model_copy(update={"entity_concepts": (edge,)})
+    return {strength for _, _, strength in ConceptCombos().aliases(only_edge, records)}
+
+
+def test_concept_combos_take_their_tier_from_the_edge_weight(sources: Sources, records: dict[str, EntityRecord]) -> None:
+    full = EntityConceptRow(entity_id="aws/eks", phrase="managed kubernetes", weight=sources.thresholds.concept_generated_weight)
+    partial = full.model_copy(update={"weight": sources.thresholds.concept_min_weight})
+    assert _concept_strengths(full, sources, records) == {Strength.GENERATED}
+    assert _concept_strengths(partial, sources, records) == {Strength.WEAK}

@@ -6,3 +6,4 @@ hint_bonus: 0.15
 precision_target: 0.98
 coverage_target: 0.90
 concept_min_weight: 0.5
+concept_generated_weight: 1.0

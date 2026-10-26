@@ -1,6 +1,6 @@
 # Resolve examples
 
-Every case below ran through the real resolver on index `9d402f5cc5a9ad38` (178 entities, 802 aliases).
+Every case below ran through the real resolver on index `7fb6d0da4a2ac6f9` (178 entities, 802 aliases).
 Each row shows where the match happened and the numbers behind the answer.
 Rule (D-22, D-48): `resolved` iff raw score ≥ 0.75 and margin ≥ 0.15; `ambiguous` iff raw score ≥ 0.5 (D-51: candidates below are dropped); else `no_match`.
 Hints and the vendor found in the input add a bonus of 0.15 that ranks and widens the margin, never the raw score.
@@ -73,9 +73,9 @@ Vendor × concept phrases are compiled into aliases at build time; slang is rewr
 
 | Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
-| `AWS managed Kubernetes` (build-time concept alias) | A · ExactAlias | resolved `aws/eks` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
-| `Fortinet firewall` (build-time concept alias) | A · ExactAlias | resolved `fortinet/fortigate` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
-| `Amazon managed k8` (k8 rewritten to kubernetes) | B · ExactAlias | resolved `aws/eks` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
+| `AWS managed Kubernetes` (build-time concept alias) | A · ExactAlias | resolved `aws/eks` · 0.9 | raw 0.9 · margin 0.9 | ✅ |
+| `Fortinet firewall` (build-time concept alias) | A · ExactAlias | resolved `fortinet/fortigate` · 0.9 | raw 0.9 · margin 0.9 | ✅ |
+| `Amazon managed k8` (k8 rewritten to kubernetes) | B · ExactAlias | resolved `aws/eks` · 0.8 | raw 0.9 · margin 0.9 | ✅ |
 | `managed kubernetes` (no vendor: a concept alone is never an alias) | B · FuzzyAlias | ambiguous · `aws/eks` 0.5275, `google/kubernetes_engine` 0.4725 | raw 0.7673 · margin 0.08 | ✅ |
 
 ## Typos
