@@ -1,5 +1,5 @@
 from src.build import build_tables
-from src.constants import DATA_DIR, Status
+from src.constants import BASE_BY_STRENGTH, DATA_DIR, Status, Strength
 from src.models import AliasRow, Filters, Hints, Resolution, load_sources
 from src.ports import InMemoryLedger, InMemoryReviewQueue, LedgerKey
 from src.resolver import Resolver, resolve
@@ -161,3 +161,12 @@ def test_lowercase_input_has_no_capitals_to_split_even_after_a_camel_case_hit(re
 
 def test_all_caps_word_is_not_typo_corrected_into_another_concept(resolver: Resolver) -> None:
     assert resolver.resolve("Jira PAAS").confidence < resolver.resolve("Jira paas").confidence
+
+
+def test_synonym_rewritten_hit_is_capped_at_weak(resolver: Resolver) -> None:
+    assert resolver.resolve("kube").id == "kubernetes/kubernetes"
+    assert resolver.resolve("kube").confidence <= BASE_BY_STRENGTH[Strength.WEAK]
+
+
+def test_fuzzy_without_a_rewrite_keeps_its_own_score(resolver: Resolver) -> None:
+    assert resolver.resolve("Crowdstrik Falcon").confidence > BASE_BY_STRENGTH[Strength.WEAK]
