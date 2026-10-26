@@ -16,6 +16,7 @@ class Query:
     text: str
     hints: Hints
     filters: Filters
+    split_text: str = ""
 
 
 class Matcher(Protocol):
@@ -44,6 +45,16 @@ class JoinedWords:
             if hits:
                 return hits
         return []
+
+
+class CamelCaseSplit:
+    def __init__(self, exact: Matcher) -> None:
+        self.exact = exact
+
+    def match(self, query: Query) -> Scored:
+        if not query.split_text:
+            return []
+        return self.exact.match(replace(query, text=query.split_text, split_text=""))
 
 
 class WithoutNumbers:

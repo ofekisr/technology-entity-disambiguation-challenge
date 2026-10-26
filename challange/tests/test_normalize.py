@@ -1,7 +1,8 @@
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from src.normalize import normalize, tokens
+from src.normalize import normalize, split_camel, tokens
 
 names = st.text(alphabet=st.characters(min_codepoint=32, max_codepoint=126), max_size=40)
 VERSION_SUFFIXES = (" 2.14", " v7", " 10.0.1")
@@ -46,3 +47,8 @@ def test_trailing_punctuation_invariant(name: str, mark: str) -> None:
 @given(names, st.sampled_from(VERSION_SUFFIXES))
 def test_version_suffix_invariant(name: str, suffix: str) -> None:
     assert normalize(name + suffix) == normalize(name)
+
+
+@pytest.mark.parametrize(("raw", "split"), [("RedHat", "Red Hat"), ("IISServer", "IIS Server"), ("log4j", "log4j"), ("AWS", "AWS")])
+def test_split_camel_breaks_words_at_inner_capitals(raw: str, split: str) -> None:
+    assert split_camel(raw) == split

@@ -8,10 +8,10 @@ from src.build import build_tables
 from src.catalog import Catalog, Scored
 from src.constants import BASE_BY_STRENGTH, CONFIDENCE_DECIMALS, DATA_DIR, MAX_ALTERNATIVES
 from src.fuzzy import FuzzyAlias
-from src.matchers import ExactAlias, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers, joined_variants
+from src.matchers import CamelCaseSplit, ExactAlias, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers, joined_variants
 from src.models import Filters, Hints, load_sources
 from src.normalize import normalize
-from src.resolver import Resolver, canonical_filters
+from src.resolver import Resolver, canonical_filters, split_norm
 from src.tables import Tables
 from src.typos import EXACT_QUALITY, TypoCorrector
 
@@ -20,8 +20,9 @@ Json = dict[str, object]
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 GUIDE = DOCS_DIR / "solution.guide.html"
 GUIDE_DATA = re.compile(r'(<script type="application/json" id="examples-data">).*?(</script>)', re.S)
-STEPS_A = ("ExactAlias", "JoinedWords", "WithoutNumbers")
-STEP_ORDER = (*(f"A · {name}" for name in STEPS_A), *(f"B · {name}" for name in (*STEPS_A, "FuzzyAlias")))
+STEPS_A = ("ExactAlias", "JoinedWords", "CamelCaseSplit", "WithoutNumbers")
+STEPS_B = ("ExactAlias", "JoinedWords", "WithoutNumbers", "FuzzyAlias")
+STEP_ORDER = (*(f"A · {name}" for name in STEPS_A), *(f"B · {name}" for name in STEPS_B))
 @dataclass(frozen=True)
 class Group:
     title: str
@@ -32,7 +33,7 @@ GROUPS = {
     "exact": Group("Exact name or alias", "The input is already in the alias table; the alias strength sets the score: canonical 1.0, curated 0.97, generated 0.9, weak 0.8."),
     "vendor": Group("Vendor names and prefixes", "A bare vendor name maps to the vendor entity; a prefix such as MS only counts next to a product (D-41)."),
     "look-alike": Group("Look-alikes kept apart", "Names that share letters or words but are different products each resolve to their own id."),
-    "cleaning": Group("Cleaning and retries", "Versions are dropped, split words are joined, a trailing number is retried without it; retries are capped below an exact hit."),
+    "cleaning": Group("Cleaning and retries", "Versions are dropped, split words are joined, CamelCase is split at inner capitals, a trailing number is retried without it."),
     "context": Group("Same name, different products", "A bare shared name is ambiguous; a hint, a filter or a context word picks one (D-48)."),
     "semantic": Group("Paraphrases (semantic layer)", "Vendor × concept phrases are compiled into aliases at build time; slang is rewritten at query time (D-49)."),
     "typo": Group("Typos", "Fuzzy matching fixes small misspellings, weighted by how rare each word is; words of 3 letters or fewer are never corrected."),
@@ -70,6 +71,7 @@ CASES = (
     Case("Log4j 2", "cleaning", "resolved", "apache/log4j", "bare number kept"),
     Case("Share Point", "cleaning", "resolved", "microsoft/sharepoint", "split words joined"),
     Case("Windows 10", "cleaning", "resolved", "microsoft/windows", "retried without the number"),
+    Case("RedHat", "cleaning", "resolved", "redhat/*", "split at inner capitals (D-50)"),
     Case("Sentinel", "context", "ambiguous", None, "two products share the name"),
     Case("Sentinel", "context", "resolved", "microsoft/sentinel", "vendor hint", hints=Hints(vendor="Microsoft")),
     Case("Sentinel", "context", "resolved", "hashicorp/sentinel", "vendor filter", filters=Filters(vendors=("hashicorp",))),
@@ -89,7 +91,6 @@ CASES = (
     Case("Acme Widget Pro", "outside", "no_match", None, "nothing known"),
     Case("AWS EKS cluster", "known-limit", "resolved", "aws/eks", "G-05: an extra generic word"),
     Case("Crwdstrk Falcon", "known-limit", "resolved", "crowdstrike/falcon", "more than 2 letters wrong"),
-    Case("RedHat", "known-limit", "resolved", "redhat/enterprise_linux", "joined word, split not handled"),
 )
 
 
@@ -115,13 +116,14 @@ class Tracer:
         self.fuzzy = FuzzyAlias(tables, self.catalog, TypoCorrector(tables.idf))
         self.matchers: dict[str, Matcher] = {
             "ExactAlias": exact, "JoinedWords": JoinedWords(exact),
-            "WithoutNumbers": WithoutNumbers(exact, self.catalog), "FuzzyAlias": self.fuzzy,
+            "CamelCaseSplit": CamelCaseSplit(exact), "WithoutNumbers": WithoutNumbers(exact, self.catalog), "FuzzyAlias": self.fuzzy,
         }
         self.rewriter = SynonymRewrite(exact, tables.synonyms, tables.idf)
 
     def trace(self, case: Case) -> Json:
         hints = self.resolver.canonical_hints(case.hints or Hints())
-        query = Query(normalize(case.input), hints, canonical_filters(case.filters))
+        input_norm = normalize(case.input)
+        query = Query(input_norm, hints, canonical_filters(case.filters), split_norm(case.input, input_norm))
         steps, hits, winner = self._run_steps(query)
         result = self.resolver.resolve(case.input, hints=case.hints, filters=case.filters)
         rewritten = self.rewriter.rewrite(query.text)
@@ -140,7 +142,7 @@ class Tracer:
     def _plan(self, query: Query) -> list[tuple[str, str, Query]]:
         rewritten = replace(query, text=self.rewriter.rewrite(query.text))
         plan = [("A", name, query) for name in STEPS_A] + [("B", "SynonymRewrite", rewritten)]
-        return plan + [("B", name, rewritten) for name in (*STEPS_A, "FuzzyAlias")]
+        return plan + [("B", name, rewritten) for name in STEPS_B]
 
     def _run_steps(self, query: Query) -> tuple[list[Json], Scored, str | None]:
         steps: list[Json] = []
@@ -164,7 +166,7 @@ class Tracer:
     def _detail(self, name: str, query: Query, hits: Scored) -> Json:
         if name == "FuzzyAlias":
             return self._fuzzy_detail(query, hits)
-        looked_up = {"ExactAlias": query.text, "JoinedWords": self._joined_hit(query.text), "WithoutNumbers": _without_numbers(query.text)}[name]
+        looked_up = {"ExactAlias": query.text, "JoinedWords": self._joined_hit(query.text), "CamelCaseSplit": query.split_text or None, "WithoutNumbers": _without_numbers(query.text)}[name]
         detail: Json = {"looked_up": looked_up, "alias_rows": self._alias_rows(looked_up), "candidates": _candidates(hits)}
         if name == "WithoutNumbers":
             detail["note"] = "vendor entities dropped, capped at weak 0.8"
@@ -305,7 +307,7 @@ def _md_header(tables: Tables) -> list[str]:
         "Each row shows where the match happened and the numbers behind the answer.",
         f"Rule (D-22, D-48): `resolved` iff raw score ≥ {th.t_high} and margin ≥ {th.margin}; `ambiguous` iff raw score ≥ {th.t_low} (D-51: candidates below are dropped); else `no_match`.",
         f"Hints and the vendor found in the input add a bonus of {th.hint_bonus} that ranks and widens the margin, never the raw score.", "",
-        "Steps: **A** = exact on the input as typed (ExactAlias, JoinedWords, WithoutNumbers); **B** = SynonymRewrite, then the exact steps again and FuzzyAlias.", "",
+        "Steps: **A** = exact on the input as typed (ExactAlias, JoinedWords, CamelCaseSplit, WithoutNumbers); **B** = SynonymRewrite, then ExactAlias, JoinedWords, WithoutNumbers and FuzzyAlias.", "",
         "Regenerate with `make examples`. Interactive version with full traces: guide › Examples tab.", "",
     ]
 

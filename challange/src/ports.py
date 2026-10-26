@@ -10,6 +10,7 @@ class LedgerKey:
     hints: Hints
     filters: Filters
     index_version: str
+    split_norm: str = ""
 
 
 class ResponseLedger(Protocol):

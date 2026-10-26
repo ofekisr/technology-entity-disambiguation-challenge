@@ -148,3 +148,12 @@ def test_ambiguous_confidence_comes_from_the_raw_score_not_the_bonus(tables: Tab
 
 def test_bare_vendor_prefix_is_no_match_because_the_bonus_never_lifts_a_candidate(resolver: Resolver) -> None:
     assert resolver.resolve("MS").status is Status.NO_MATCH
+
+
+def test_camel_case_input_splits_at_capitals_when_the_typed_form_misses(resolver: Resolver) -> None:
+    assert resolver.resolve("RedHat").id == resolver.resolve("Red Hat").id == "redhat/*"
+
+
+def test_lowercase_input_has_no_capitals_to_split_even_after_a_camel_case_hit(resolver: Resolver) -> None:
+    resolver.resolve("RedHat")
+    assert resolver.resolve("redhat").status is Status.NO_MATCH

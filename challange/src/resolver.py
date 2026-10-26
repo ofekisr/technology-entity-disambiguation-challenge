@@ -7,9 +7,9 @@ from src.catalog import Catalog
 from src.constants import DATA_DIR, DEFAULT_SNAPSHOT, LRU_MAXSIZE, Status
 from src.decide import Decider
 from src.fuzzy import FuzzyAlias
-from src.matchers import ExactAlias, FirstHit, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers
+from src.matchers import CamelCaseSplit, ExactAlias, FirstHit, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers
 from src.models import Filters, Hints, Resolution, load_sources
-from src.normalize import normalize
+from src.normalize import normalize, split_camel
 from src.ports import InMemoryLedger, InMemoryReviewQueue, LedgerKey, ResponseLedger, ReviewQueue
 from src.snapshot import load_snapshot, write_snapshot
 from src.tables import Tables
@@ -22,9 +22,9 @@ def default_matcher(tables: Tables) -> Matcher:
     catalog = Catalog(tables)
     exact = ExactAlias(tables, catalog)
     fuzzy = FuzzyAlias(tables, catalog, TypoCorrector(tables.idf))
-    exact_tiers = (exact, JoinedWords(exact), WithoutNumbers(exact, catalog))
-    by_meaning = SynonymRewrite(FirstHit((*exact_tiers, fuzzy)), tables.synonyms, tables.idf)
-    return FirstHit((*exact_tiers, by_meaning))
+    joined, without_numbers = JoinedWords(exact), WithoutNumbers(exact, catalog)
+    by_meaning = SynonymRewrite(FirstHit((exact, joined, without_numbers, fuzzy)), tables.synonyms, tables.idf)
+    return FirstHit((exact, joined, CamelCaseSplit(exact), without_numbers, by_meaning))
 
 
 class Resolver:
@@ -43,7 +43,8 @@ class Resolver:
         self._cached = lru_cache(maxsize=LRU_MAXSIZE)(self._resolve_normalized)
 
     def resolve(self, name: str, *, hints: Hints | None = None, filters: Filters | None = None) -> Resolution:
-        return self._cached(normalize(name), self.canonical_hints(hints or Hints()), canonical_filters(filters))
+        input_norm = normalize(name)
+        return self._cached(input_norm, split_norm(name, input_norm), self.canonical_hints(hints or Hints()), canonical_filters(filters))
 
     def canonical_hints(self, hints: Hints) -> Hints:
         if hints.vendor is None:
@@ -51,12 +52,12 @@ class Resolver:
         vendor_id = self.tables.vendor_aliases.get(normalize(hints.vendor), hints.vendor)
         return Hints(vendor=vendor_id, category=hints.category)
 
-    def _resolve_normalized(self, input_norm: str, hints: Hints, filters: Filters) -> Resolution:
-        key = LedgerKey(input_norm, hints, filters, self.tables.index_version)
+    def _resolve_normalized(self, input_norm: str, split: str, hints: Hints, filters: Filters) -> Resolution:
+        key = LedgerKey(input_norm, hints, filters, self.tables.index_version, split)
         recorded = self.ledger.get(key)
         if recorded is not None:
             return recorded
-        result = self._compute(Query(input_norm, hints, filters))
+        result = self._compute(Query(input_norm, hints, filters, split))
         self.ledger.record(key, result)
         if result.status is Status.NO_MATCH and input_norm:
             self.review_queue.enqueue(input_norm, self.tables.index_version)
@@ -66,6 +67,11 @@ class Resolver:
         if not query.text:
             return Resolution.no_match(self.tables.index_version)
         return self.decider.decide(self.matcher.match(query))
+
+
+def split_norm(name: str, input_norm: str) -> str:
+    split = normalize(split_camel(name))
+    return split if split != input_norm else ""
 
 
 def canonical_filters(filters: Filters | None) -> Filters:

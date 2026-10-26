@@ -6,6 +6,7 @@ from src.constants import SYMBOL_TOKENS
 SEPARATORS = re.compile(r"[\s\-_/,;:()\[\]{}\"'!?&|*@<>=~`^\\]+")
 VERSION_TOKEN = re.compile(r"^(v\d[\d.]*|\d+\.[\d.]*)$")
 NON_TOKEN_CHARS = re.compile(r"[^a-z0-9+#.]")
+CAMEL_BOUNDARY = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
 
 
 def tokens(name: str) -> tuple[str, ...]:
@@ -16,6 +17,10 @@ def tokens(name: str) -> tuple[str, ...]:
 
 def normalize(name: str) -> str:
     return " ".join(tokens(name))
+
+
+def split_camel(name: str) -> str:
+    return CAMEL_BOUNDARY.sub(" ", name)
 
 
 def _clean(raw: str) -> str:

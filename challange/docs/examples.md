@@ -5,7 +5,7 @@ Each row shows where the match happened and the numbers behind the answer.
 Rule (D-22, D-48): `resolved` iff raw score ≥ 0.75 and margin ≥ 0.15; `ambiguous` iff raw score ≥ 0.5 (D-51: candidates below are dropped); else `no_match`.
 Hints and the vendor found in the input add a bonus of 0.15 that ranks and widens the margin, never the raw score.
 
-Steps: **A** = exact on the input as typed (ExactAlias, JoinedWords, WithoutNumbers); **B** = SynonymRewrite, then the exact steps again and FuzzyAlias.
+Steps: **A** = exact on the input as typed (ExactAlias, JoinedWords, CamelCaseSplit, WithoutNumbers); **B** = SynonymRewrite, then ExactAlias, JoinedWords, WithoutNumbers and FuzzyAlias.
 
 Regenerate with `make examples`. Interactive version with full traces: guide › Examples tab.
 
@@ -45,7 +45,7 @@ Names that share letters or words but are different products each resolve to the
 
 ## Cleaning and retries
 
-Versions are dropped, split words are joined, a trailing number is retried without it; retries are capped below an exact hit.
+Versions are dropped, split words are joined, CamelCase is split at inner capitals, a trailing number is retried without it.
 
 | Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
@@ -53,6 +53,7 @@ Versions are dropped, split words are joined, a trailing number is retried witho
 | `Log4j 2` (bare number kept) | A · ExactAlias | resolved `apache/log4j` · 0.97 | raw 0.97 · margin 0.97 | ✅ |
 | `Share Point` (split words joined) | A · JoinedWords | resolved `microsoft/sharepoint` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
 | `Windows 10` (retried without the number) | A · WithoutNumbers | resolved `microsoft/windows` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
+| `RedHat` (split at inner capitals (D-50)) | A · CamelCaseSplit | resolved `redhat/*` · 1.0 | raw 1.0 · margin 1.0 | ✅ |
 
 ## Same name, different products
 
@@ -107,7 +108,6 @@ Cases the resolver misses today, tracked in docs/GAPS.md.
 |---|---|---|---|---|
 | `AWS EKS cluster` (G-05: an extra generic word) | B · FuzzyAlias | ambiguous · `aws/eks` 1.0 | raw 0.5578 · +bonus → rank 0.7078 · margin 0.7078 | gap · want resolved `aws/eks` |
 | `Crwdstrk Falcon` (more than 2 letters wrong) | B · FuzzyAlias | no_match | best raw 0.4226 is below t_low 0.5 | gap · want resolved `crowdstrike/falcon` |
-| `RedHat` (joined word, split not handled) | — | no_match | no step found a candidate | gap · want resolved `redhat/enterprise_linux` |
 
 ## Appendix — optional (+5 minutes)
 
@@ -128,6 +128,7 @@ Normalized: `ms`
 
 - **A · ExactAlias** on `ms` → miss
 - **A · JoinedWords** on `ms` → miss
+- **A · CamelCaseSplit** on `ms` → miss
 - **A · WithoutNumbers** on `ms` → miss
 - **B · SynonymRewrite** on `ms` → no change
 - **B · ExactAlias** on `ms` → miss
@@ -153,6 +154,7 @@ Normalized: `windows 10`
 
 - **A · ExactAlias** on `windows 10` → miss
 - **A · JoinedWords** on `windows 10` → miss
+- **A · CamelCaseSplit** on `windows 10` → miss
 - **A · WithoutNumbers** on `windows 10` → hit
   - alias `windows` → `microsoft/windows` (weak, base 0.8)
 - **Decide:** top `microsoft/windows` raw 0.8 (≥ 0.75: yes), margin 0.8 (≥ 0.15: yes) → resolved `microsoft/windows` · 0.8
@@ -175,6 +177,7 @@ Normalized: `managed kubernetes`
 
 - **A · ExactAlias** on `managed kubernetes` → miss
 - **A · JoinedWords** on `managed kubernetes` → miss
+- **A · CamelCaseSplit** on `managed kubernetes` → miss
 - **A · WithoutNumbers** on `managed kubernetes` → miss
 - **B · SynonymRewrite** on `managed kubernetes` → no change
 - **B · ExactAlias** on `managed kubernetes` → miss
@@ -193,6 +196,7 @@ Normalized: `crowdstrik falcon`
 
 - **A · ExactAlias** on `crowdstrik falcon` → miss
 - **A · JoinedWords** on `crowdstrik falcon` → miss
+- **A · CamelCaseSplit** on `crowdstrik falcon` → miss
 - **A · WithoutNumbers** on `crowdstrik falcon` → miss
 - **B · SynonymRewrite** on `crowdstrik falcon` → no change
 - **B · ExactAlias** on `crowdstrik falcon` → miss
@@ -211,6 +215,7 @@ Normalized: `amazon prime`
 
 - **A · ExactAlias** on `amazon prime` → miss
 - **A · JoinedWords** on `amazon prime` → miss
+- **A · CamelCaseSplit** on `amazon prime` → miss
 - **A · WithoutNumbers** on `amazon prime` → miss
 - **B · SynonymRewrite** on `amazon prime` → no change
 - **B · ExactAlias** on `amazon prime` → miss
@@ -225,6 +230,7 @@ Normalized: `aws eks cluster`
 
 - **A · ExactAlias** on `aws eks cluster` → miss
 - **A · JoinedWords** on `aws eks cluster` → miss
+- **A · CamelCaseSplit** on `aws eks cluster` → miss
 - **A · WithoutNumbers** on `aws eks cluster` → miss
 - **B · SynonymRewrite** on `aws eks cluster` → no change
 - **B · ExactAlias** on `aws eks cluster` → miss
