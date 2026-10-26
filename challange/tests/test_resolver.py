@@ -138,3 +138,9 @@ def test_empty_input_is_not_queued(tables: Tables) -> None:
     queue = InMemoryReviewQueue()
     Resolver(tables, review_queue=queue).resolve("!!!")
     assert queue.pending() == ()
+
+
+def test_ambiguous_confidence_comes_from_the_raw_score_not_the_bonus(tables: Tables) -> None:
+    result = Resolver(tables).resolve("Splunk Enterprise Security")
+    assert result.status is Status.AMBIGUOUS
+    assert result.confidence < tables.thresholds.t_high

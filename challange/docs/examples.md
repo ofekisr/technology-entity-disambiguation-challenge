@@ -138,7 +138,7 @@ Normalized: `ms`
   - `microsoft/windows_server` via `ms os`: common ms 2.6892 = 2.6892 / union 6.054 = raw 0.4442
   - `microsoft/azure` via `ms cloud`: common ms 2.6892 = 2.6892 / union 6.1256 = raw 0.439
 - **Decide:** top `microsoft/windows` raw 0.4442 (≥ 0.75: no), margin 0.0 (≥ 0.15: no) → ambiguous · `microsoft/windows` 0.2035, `microsoft/windows_server` 0.2035, `microsoft/azure` 0.2017
-- **Final answer:** ambiguous → the caller picks one of: microsoft/windows 0.2035, microsoft/windows_server 0.2035, microsoft/azure 0.2017, microsoft/sql_server 0.2017, microsoft/exchange_server 0.1896; confidence 0.5942. Confidence = top rank 0.5942 (raw 0.4442 + bonus) after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks.
+- **Final answer:** ambiguous → the caller picks one of: microsoft/windows 0.2035, microsoft/windows_server 0.2035, microsoft/azure 0.2017, microsoft/sql_server 0.2017, microsoft/exchange_server 0.1896; confidence 0.4442. Confidence = raw 0.4442 after calibration, capped at 1.0; rank 0.5942 = raw 0.4442 + bonus only ordered the candidates; shares = each rank ÷ sum of shown ranks.
 
 ### Look-alikes kept apart: `C`
 
@@ -169,7 +169,7 @@ Normalized: `sentinel`
   - alias `sentinel` → `microsoft/sentinel` (weak, base 0.8)
   - alias `sentinel` → `thales/sentinel` (weak, base 0.8)
 - **Decide:** top `hashicorp/sentinel` raw 0.8 (≥ 0.75: yes), margin 0.0 (≥ 0.15: no) → ambiguous · `hashicorp/sentinel` 0.3333, `microsoft/sentinel` 0.3333, `thales/sentinel` 0.3333
-- **Final answer:** ambiguous → the caller picks one of: hashicorp/sentinel 0.3333, microsoft/sentinel 0.3333, thales/sentinel 0.3333; confidence 0.8. Confidence = top rank 0.8 after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks.
+- **Final answer:** ambiguous → the caller picks one of: hashicorp/sentinel 0.3333, microsoft/sentinel 0.3333, thales/sentinel 0.3333; confidence 0.8. Confidence = raw 0.8 after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks.
 
 ### Paraphrases (semantic layer): `managed kubernetes`
 
@@ -187,7 +187,7 @@ Normalized: `managed kubernetes`
   - `google/kubernetes_engine` via `google managed kubernetes`: common kubernetes 3.7414 + managed 4.372 = 8.1134 / union 11.8048 = raw 0.6873
   - `kubernetes/kubernetes` via `kubernetes`: common kubernetes 3.7414 = 3.7414 / union 8.1134 = raw 0.4611
 - **Decide:** top `aws/eks` raw 0.7673 (≥ 0.75: yes), margin 0.08 (≥ 0.15: no) → ambiguous · `aws/eks` 0.5275, `google/kubernetes_engine` 0.4725
-- **Final answer:** ambiguous → the caller picks one of: aws/eks 0.5275, google/kubernetes_engine 0.4725; confidence 0.7673. Confidence = top rank 0.7673 after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks.
+- **Final answer:** ambiguous → the caller picks one of: aws/eks 0.5275, google/kubernetes_engine 0.4725; confidence 0.7673. Confidence = raw 0.7673 after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks.
 
 ### Typos: `Crowdstrik Falcon`
 
@@ -237,4 +237,4 @@ Normalized: `aws eks cluster`
 - **B · FuzzyAlias** on `aws eks cluster` → hit
   - `aws/eks` via `aws eks`: common aws 3.1233 + eks 5.2807 = 8.404 / union 15.0671 = raw 0.5578
 - **Decide:** top `aws/eks` raw 0.5578 (≥ 0.75: no), margin 0.7078 (≥ 0.15: yes) → ambiguous · `aws/eks` 1.0
-- **Final answer:** ambiguous → the caller picks one of: aws/eks 1.0; confidence 0.7078. Confidence = top rank 0.7078 (raw 0.5578 + bonus) after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks.
+- **Final answer:** ambiguous → the caller picks one of: aws/eks 1.0; confidence 0.5578. Confidence = raw 0.5578 after calibration, capped at 1.0; rank 0.7078 = raw 0.5578 + bonus only ordered the candidates; shares = each rank ÷ sum of shown ranks.

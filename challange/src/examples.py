@@ -241,12 +241,9 @@ def _why_confidence(result: Json, decision: Json) -> str:
     if result["status"] == "no_match":
         return "no step found a candidate" if "rule" in decision else f"top rank {decision['top_rank']} is below t_low"
     raw, rank = decision["top_raw"], decision["top_rank"]
-    lifted = rank != raw
-    if result["status"] == "resolved":
-        ordered = f"; rank {rank} = raw {raw} + bonus only ordered the candidates" if lifted else ""
-        return f"confidence = raw {raw} after calibration, capped at 1.0{ordered}"
-    split = f" (raw {raw} + bonus)" if lifted else ""
-    return f"confidence = top rank {rank}{split} after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks"
+    ordered = f"; rank {rank} = raw {raw} + bonus only ordered the candidates" if rank != raw else ""
+    shares = "; shares = each rank ÷ sum of shown ranks" if result["status"] == "ambiguous" else ""
+    return f"confidence = raw {raw} after calibration, capped at 1.0{ordered}{shares}"
 
 
 def _without_numbers(text: str) -> str | None:

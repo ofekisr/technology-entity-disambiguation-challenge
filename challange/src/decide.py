@@ -38,7 +38,7 @@ class Decider:
             for score, _, entity_id in shown
         )
         empty = Resolution.no_match(self.tables.index_version)
-        top = self._calibrate(shown[0][0])
+        top = self._calibrate(shown[0][1])
         return empty.model_copy(update={"status": Status.AMBIGUOUS, "confidence": top, "alternatives": alternatives})
 
     def _calibrate(self, score: float) -> float:
