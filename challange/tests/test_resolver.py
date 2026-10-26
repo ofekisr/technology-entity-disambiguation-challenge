@@ -144,3 +144,7 @@ def test_ambiguous_confidence_comes_from_the_raw_score_not_the_bonus(tables: Tab
     result = Resolver(tables).resolve("Splunk Enterprise Security")
     assert result.status is Status.AMBIGUOUS
     assert result.confidence < tables.thresholds.t_high
+
+
+def test_bare_vendor_prefix_is_no_match_because_the_bonus_never_lifts_a_candidate(resolver: Resolver) -> None:
+    assert resolver.resolve("MS").status is Status.NO_MATCH

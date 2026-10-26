@@ -59,7 +59,7 @@ CASES = (
     Case("EKS", "exact", "resolved", "aws/eks", "weak: a bare acronym"),
     Case("Microsoft", "vendor", "resolved", "microsoft/*", "vendor entity"),
     Case("MS Teams", "vendor", "resolved", "microsoft/teams", "prefix next to a product (G-06)"),
-    Case("MS", "vendor", "ambiguous", None, "a prefix alone never resolves"),
+    Case("MS", "vendor", "no_match", None, "a prefix alone never resolves"),
     Case("C", "look-alike", "resolved", "c/c"),
     Case("C#", "look-alike", "resolved", "csharp/csharp", "symbols are kept"),
     Case("C++", "look-alike", "resolved", "cpp/cpp", "symbols are kept"),
@@ -215,16 +215,17 @@ class Tracer:
         }
 
     def _decision(self, hits: Scored) -> Json:
-        ranked = sorted(hits, key=lambda item: (-item[0], item[2]))
-        if not ranked:
-            return {"rule": "no candidates → no_match"}
         thresholds = self.tables.thresholds
+        ranked = sorted((item for item in hits if item[1] >= thresholds.t_low), key=lambda item: (-item[0], item[2]))
+        if not ranked:
+            best = max((raw for _, raw, _ in hits), default=None)
+            return {"rule": "no step found a candidate" if best is None else f"best raw {_round(best)} is below t_low {thresholds.t_low}"}
         top_score, top_raw, top_id = ranked[0]
         margin = top_score - (ranked[1][0] if len(ranked) > 1 else 0.0)
         return {
             "top": top_id, "top_raw": _round(top_raw), "top_rank": _round(top_score), "margin": _round(margin),
             "second_rank": _round(top_score - margin), "margin_passes": margin >= thresholds.margin,
-            "raw_passes": top_raw >= thresholds.t_high, "above_t_low": top_score >= thresholds.t_low,
+            "raw_passes": top_raw >= thresholds.t_high, "above_t_low": top_raw >= thresholds.t_low,
         }
 
 
@@ -239,7 +240,7 @@ def _answer(result: Json) -> str:
 
 def _why_confidence(result: Json, decision: Json) -> str:
     if result["status"] == "no_match":
-        return "no step found a candidate" if "rule" in decision else f"top rank {decision['top_rank']} is below t_low"
+        return str(decision["rule"])
     raw, rank = decision["top_raw"], decision["top_rank"]
     ordered = f"; rank {rank} = raw {raw} + bonus only ordered the candidates" if rank != raw else ""
     shares = "; shares = each rank ÷ sum of shown ranks" if result["status"] == "ambiguous" else ""
@@ -285,7 +286,7 @@ def _result_text(result: Json) -> str:
 
 def _why(decision: Json) -> str:
     if "rule" in decision:
-        return "nothing matched"
+        return str(decision["rule"])
     bonus = f" · +bonus → rank {decision['top_rank']}" if decision["top_rank"] != decision["top_raw"] else ""
     return f"raw {decision['top_raw']}{bonus} · margin {decision['margin']}"
 
@@ -302,7 +303,7 @@ def _md_header(tables: Tables) -> list[str]:
         "# Resolve examples", "",
         f"Every case below ran through the real resolver on index `{tables.index_version}` ({len(tables.entities)} entities, {len(tables.aliases)} aliases).",
         "Each row shows where the match happened and the numbers behind the answer.",
-        f"Rule (D-22, D-48): `resolved` iff raw score ≥ {th.t_high} and margin ≥ {th.margin}; `ambiguous` iff score ≥ {th.t_low}; else `no_match`.",
+        f"Rule (D-22, D-48): `resolved` iff raw score ≥ {th.t_high} and margin ≥ {th.margin}; `ambiguous` iff raw score ≥ {th.t_low} (D-51: candidates below are dropped); else `no_match`.",
         f"Hints and the vendor found in the input add a bonus of {th.hint_bonus} that ranks and widens the margin, never the raw score.", "",
         "Steps: **A** = exact on the input as typed (ExactAlias, JoinedWords, WithoutNumbers); **B** = SynonymRewrite, then the exact steps again and FuzzyAlias.", "",
         "Regenerate with `make examples`. Interactive version with full traces: guide › Examples tab.", "",

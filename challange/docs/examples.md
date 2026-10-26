@@ -2,7 +2,7 @@
 
 Every case below ran through the real resolver on index `9d402f5cc5a9ad38` (178 entities, 802 aliases).
 Each row shows where the match happened and the numbers behind the answer.
-Rule (D-22, D-48): `resolved` iff raw score ≥ 0.75 and margin ≥ 0.15; `ambiguous` iff score ≥ 0.5; else `no_match`.
+Rule (D-22, D-48): `resolved` iff raw score ≥ 0.75 and margin ≥ 0.15; `ambiguous` iff raw score ≥ 0.5 (D-51: candidates below are dropped); else `no_match`.
 Hints and the vendor found in the input add a bonus of 0.15 that ranks and widens the margin, never the raw score.
 
 Steps: **A** = exact on the input as typed (ExactAlias, JoinedWords, WithoutNumbers); **B** = SynonymRewrite, then the exact steps again and FuzzyAlias.
@@ -28,7 +28,7 @@ A bare vendor name maps to the vendor entity; a prefix such as MS only counts ne
 |---|---|---|---|---|
 | `Microsoft` (vendor entity) | A · ExactAlias | resolved `microsoft/*` · 1.0 | raw 1.0 · margin 1.0 | ✅ |
 | `MS Teams` (prefix next to a product (G-06)) | A · ExactAlias | resolved `microsoft/teams` · 0.9 | raw 0.9 · margin 0.9 | ✅ |
-| `MS` (a prefix alone never resolves) | B · FuzzyAlias | ambiguous · `microsoft/windows` 0.2035, `microsoft/windows_server` 0.2035, `microsoft/azure` 0.2017 | raw 0.4442 · +bonus → rank 0.5942 · margin 0.0 | ✅ |
+| `MS` (a prefix alone never resolves) | B · FuzzyAlias | no_match | best raw 0.4442 is below t_low 0.5 | ✅ |
 
 ## Look-alikes kept apart
 
@@ -83,8 +83,8 @@ Fuzzy matching fixes small misspellings, weighted by how rare each word is; word
 
 | Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
-| `Crowdstrik Falcon` (vendor misspelled) | B · FuzzyAlias | resolved `crowdstrike/falcon` · 0.948 | raw 0.948 · margin 0.4678 | ✅ |
-| `Crowdstrike Falcn` (rank above 1, confidence stays raw) | B · FuzzyAlias | resolved `crowdstrike/falcon` · 0.904 | raw 0.904 · +bonus → rank 1.054 · margin 0.6698 | ✅ |
+| `Crowdstrik Falcon` (vendor misspelled) | B · FuzzyAlias | resolved `crowdstrike/falcon` · 0.948 | raw 0.948 · margin 0.948 | ✅ |
+| `Crowdstrike Falcn` (rank above 1, confidence stays raw) | B · FuzzyAlias | resolved `crowdstrike/falcon` · 0.904 | raw 0.904 · +bonus → rank 1.054 · margin 1.054 | ✅ |
 | `Kubernets` (one word, one letter missing) | B · FuzzyAlias | resolved `kubernetes/kubernetes` · 0.8889 | raw 0.8889 · margin 0.3527 | ✅ |
 
 ## Must not resolve
@@ -93,11 +93,11 @@ Products outside the catalog stay unresolved even when they share words with kno
 
 | Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
-| `AWS Foo` (known vendor, unknown product) | — | no_match | nothing matched | ✅ |
-| `Amazon Prime` (the vendor word alone is not enough) | B · FuzzyAlias | no_match | raw 0.2835 · margin 0.2835 | ✅ |
-| `Microsoft 365` (not in the catalog) | — | no_match | nothing matched | ✅ |
-| `Splunk Enterprise Security` (shares words with Splunk Enterprise) | B · FuzzyAlias | ambiguous · `splunk/enterprise` 1.0 | raw 0.6871 · +bonus → rank 0.8371 · margin 0.5783 | ✅ not resolved (gold: no_match) |
-| `Acme Widget Pro` (nothing known) | — | no_match | nothing matched | ✅ |
+| `AWS Foo` (known vendor, unknown product) | — | no_match | no step found a candidate | ✅ |
+| `Amazon Prime` (the vendor word alone is not enough) | B · FuzzyAlias | no_match | best raw 0.2835 is below t_low 0.5 | ✅ |
+| `Microsoft 365` (not in the catalog) | — | no_match | no step found a candidate | ✅ |
+| `Splunk Enterprise Security` (shares words with Splunk Enterprise) | B · FuzzyAlias | ambiguous · `splunk/enterprise` 1.0 | raw 0.6871 · +bonus → rank 0.8371 · margin 0.8371 | ✅ not resolved (gold: no_match) |
+| `Acme Widget Pro` (nothing known) | — | no_match | no step found a candidate | ✅ |
 
 ## Known limits
 
@@ -106,8 +106,8 @@ Cases the resolver misses today, tracked in docs/GAPS.md.
 | Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
 | `AWS EKS cluster` (G-05: an extra generic word) | B · FuzzyAlias | ambiguous · `aws/eks` 1.0 | raw 0.5578 · +bonus → rank 0.7078 · margin 0.7078 | gap · want resolved `aws/eks` |
-| `Crwdstrk Falcon` (more than 2 letters wrong) | B · FuzzyAlias | no_match | raw 0.4226 · margin 0.0 | gap · want resolved `crowdstrike/falcon` |
-| `RedHat` (joined word, split not handled) | — | no_match | nothing matched | gap · want resolved `redhat/enterprise_linux` |
+| `Crwdstrk Falcon` (more than 2 letters wrong) | B · FuzzyAlias | no_match | best raw 0.4226 is below t_low 0.5 | gap · want resolved `crowdstrike/falcon` |
+| `RedHat` (joined word, split not handled) | — | no_match | no step found a candidate | gap · want resolved `redhat/enterprise_linux` |
 
 ## Appendix — optional (+5 minutes)
 
@@ -137,8 +137,6 @@ Normalized: `ms`
   - `microsoft/windows` via `ms os`: common ms 2.6892 = 2.6892 / union 6.054 = raw 0.4442
   - `microsoft/windows_server` via `ms os`: common ms 2.6892 = 2.6892 / union 6.054 = raw 0.4442
   - `microsoft/azure` via `ms cloud`: common ms 2.6892 = 2.6892 / union 6.1256 = raw 0.439
-- **Decide:** top `microsoft/windows` raw 0.4442 (≥ 0.75: no), margin 0.0 (≥ 0.15: no) → ambiguous · `microsoft/windows` 0.2035, `microsoft/windows_server` 0.2035, `microsoft/azure` 0.2017
-- **Final answer:** ambiguous → the caller picks one of: microsoft/windows 0.2035, microsoft/windows_server 0.2035, microsoft/azure 0.2017, microsoft/sql_server 0.2017, microsoft/exchange_server 0.1896; confidence 0.4442. Confidence = raw 0.4442 after calibration, capped at 1.0; rank 0.5942 = raw 0.4442 + bonus only ordered the candidates; shares = each rank ÷ sum of shown ranks.
 
 ### Look-alikes kept apart: `C`
 
@@ -204,7 +202,7 @@ Normalized: `crowdstrik falcon`
   - `crowdstrike/falcon` via `crowdstrike falcon`: common crowdstrike 5.2807 + falcon 4.8777 = 9.6303 / union 10.1584 = raw 0.948
   - `falconry/falcon` via `falcon`: common falcon 4.8777 = 4.8777 / union 10.1584 = raw 0.4802
   - `crowdstrike/*` via `crowdstrike`: common crowdstrike 5.2807 = 4.7526 / union 10.1584 = raw 0.4678
-- **Decide:** top `crowdstrike/falcon` raw 0.948 (≥ 0.75: yes), margin 0.4678 (≥ 0.15: yes) → resolved `crowdstrike/falcon` · 0.948
+- **Decide:** top `crowdstrike/falcon` raw 0.948 (≥ 0.75: yes), margin 0.948 (≥ 0.15: yes) → resolved `crowdstrike/falcon` · 0.948
 - **Final answer:** resolved → crowdstrike/falcon (CrowdStrike Falcon), confidence 0.948. Confidence = raw 0.948 after calibration, capped at 1.0.
 
 ### Must not resolve: `Amazon Prime`
@@ -220,8 +218,6 @@ Normalized: `amazon prime`
 - **B · WithoutNumbers** on `amazon prime` → miss
 - **B · FuzzyAlias** on `amazon prime` → hit
   - `paloaltonetworks/prisma_cloud` via `prisma cloud`: common prisma 5.2807 = 3.1684 / union 11.1778 = raw 0.2835
-- **Decide:** top `paloaltonetworks/prisma_cloud` raw 0.2835 (≥ 0.75: no), margin 0.2835 (≥ 0.15: yes) → no_match
-- **Final answer:** no_match → confidence 0.0; the input goes to the review queue. Top rank 0.2835 is below t_low.
 
 ### Known limits: `AWS EKS cluster`
 

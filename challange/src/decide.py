@@ -9,15 +9,15 @@ class Decider:
         self.tables = tables
 
     def decide(self, scored: Scored) -> Resolution:
-        ranked = sorted(scored, key=lambda item: (-item[0], item[2]))
         thresholds = self.tables.thresholds
-        if not ranked or ranked[0][0] < thresholds.t_low:
+        ranked = sorted((item for item in scored if item[1] >= thresholds.t_low), key=lambda item: (-item[0], item[2]))
+        if not ranked:
             return Resolution.no_match(self.tables.index_version)
         top_score, top_raw, top_id = ranked[0]
         margin = top_score - (ranked[1][0] if len(ranked) > 1 else 0.0)
         if top_raw >= thresholds.t_high and margin >= thresholds.margin:
             return self._resolved(self.tables.entities[top_id], top_raw)
-        return self._ambiguous([item for item in ranked if item[0] >= thresholds.t_low])
+        return self._ambiguous(ranked)
 
     def _resolved(self, record: EntityRecord, score: float) -> Resolution:
         return Resolution(
