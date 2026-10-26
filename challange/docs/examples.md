@@ -75,7 +75,7 @@ Vendor × concept phrases are compiled into aliases at build time; slang is rewr
 |---|---|---|---|---|
 | `AWS managed Kubernetes` (build-time concept alias) | A · ExactAlias | resolved `aws/eks` · 0.9 | raw 0.9 · margin 0.9 | ✅ |
 | `Fortinet firewall` (build-time concept alias) | A · ExactAlias | resolved `fortinet/fortigate` · 0.9 | raw 0.9 · margin 0.9 | ✅ |
-| `Amazon managed k8` (k8 rewritten to kubernetes) | B · ExactAlias | resolved `aws/eks` · 0.8 | raw 0.9 · margin 0.9 | ✅ |
+| `Amazon managed k8` (k8 rewritten to kubernetes) | B · ExactAlias | resolved `aws/eks` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
 | `managed kubernetes` (no vendor: a concept alone is never an alias) | B · FuzzyAlias | ambiguous · `aws/eks` 0.5275, `google/kubernetes_engine` 0.4725 | raw 0.7673 · margin 0.08 | ✅ |
 
 ## Typos

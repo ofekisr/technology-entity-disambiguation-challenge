@@ -43,7 +43,7 @@ def test_trace_explains_each_resolved_answer(cases: list[Json]) -> None:
     for case in cases:
         result, decision = case["result"], case["decision"]
         if result["status"] == "resolved":
-            assert decision["top"] == result["id"], case["input"]
+            assert (decision["top"], decision["top_raw"]) == (result["id"], result["confidence"]), case["input"]
 
 
 def test_every_case_states_its_final_answer(cases: list[Json]) -> None:

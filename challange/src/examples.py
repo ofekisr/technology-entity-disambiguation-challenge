@@ -8,7 +8,7 @@ from src.build import build_tables
 from src.catalog import Catalog, Scored
 from src.constants import BASE_BY_STRENGTH, CONFIDENCE_DECIMALS, DATA_DIR, MAX_ALTERNATIVES
 from src.fuzzy import FuzzyAlias
-from src.matchers import CamelCaseSplit, ExactAlias, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers, joined_variants
+from src.matchers import CamelCaseSplit, ExactAlias, JoinedWords, Matcher, Query, SynonymRewrite, WithoutNumbers, capped_at_weak, joined_variants
 from src.models import Filters, Hints, load_sources
 from src.normalize import case_signals, normalize
 from src.resolver import Resolver, canonical_filters
@@ -156,6 +156,7 @@ class Tracer:
                 steps.append(self._rewrite_step(query.text, step_query.text))
             else:
                 found = self.matchers[name].match(step_query)
+                found = capped_at_weak(found) if stage == "B" and step_query.text != query.text else found
                 steps.append(_step(stage, name, step_query.text, "hit" if found else "miss", self._detail(name, step_query, found)))
                 hits, winner = (found, f"{stage} · {name}") if found else (hits, winner)
         return steps, hits, winner
