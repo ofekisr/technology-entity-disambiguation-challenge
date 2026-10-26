@@ -11,7 +11,7 @@ Regenerate with `make examples`. Interactive version with full traces: guide ›
 
 ## Exact names
 
-| Input | Matched at | Result | Why | Expected |
+| Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
 | `Amazon EKS` | A · ExactAlias | resolved `aws/eks` · 0.9 | raw 0.9 · margin 0.9 | ✅ |
 | `Amazon Elastic Kubernetes Service` | A · ExactAlias | resolved `aws/eks` · 0.97 | raw 0.97 · margin 0.97 | ✅ |
@@ -34,7 +34,7 @@ Regenerate with `make examples`. Interactive version with full traces: guide ›
 
 ## Near-collisions
 
-| Input | Matched at | Result | Why | Expected |
+| Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
 | `Azure Sentinel` | A · ExactAlias | resolved `microsoft/sentinel` · 0.97 | raw 0.97 · margin 0.97 | ✅ |
 | `Falcon` | A · ExactAlias | ambiguous · `crowdstrike/falcon` 0.5, `falconry/falcon` 0.5 | raw 0.8 · margin 0.0 | ✅ |
@@ -46,7 +46,7 @@ Regenerate with `make examples`. Interactive version with full traces: guide ›
 
 ## Hard negatives
 
-| Input | Matched at | Result | Why | Expected |
+| Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
 | `Amazon` | A · ExactAlias | resolved `amazon/*` · 1.0 | raw 1.0 · margin 1.0 | ✅ |
 | `Amazon Prime` | B · FuzzyAlias | no_match | raw 0.2835 · margin 0.2835 | ✅ |
@@ -59,19 +59,20 @@ Regenerate with `make examples`. Interactive version with full traces: guide ›
 | `Google Cloud` | A · ExactAlias | resolved `google/cloud` · 1.0 | raw 1.0 · margin 1.0 | ✅ |
 | `Microsoft 365` | — | no_match | nothing matched | ✅ |
 | `Microsoft Copilot` | A · ExactAlias | resolved `microsoft/copilot` · 1.0 | raw 1.0 · margin 1.0 | ✅ |
-| `Microsoft Defender for Cloud` | B · FuzzyAlias | ambiguous · `microsoft/defender_for_endpoint` 0.5941, `microsoft/azure` 0.4059 | raw 0.6087 · +bonus → 0.7587 · margin 0.2403 | ✅ not resolved (gold: no_match) |
+| `Microsoft Defender for Cloud` | B · FuzzyAlias | ambiguous · `microsoft/defender_for_endpoint` 0.5941, `microsoft/azure` 0.4059 | raw 0.6087 · +bonus → rank 0.7587 · margin 0.2403 | ✅ not resolved (gold: no_match) |
 | `Office 365` | B · FuzzyAlias | no_match | raw 0.3658 · margin 0.3658 | ✅ |
-| `Splunk Enterprise Security` | B · FuzzyAlias | ambiguous · `splunk/enterprise` 1.0 | raw 0.6871 · +bonus → 0.8371 · margin 0.5783 | ✅ not resolved (gold: no_match) |
+| `Splunk Enterprise Security` | B · FuzzyAlias | ambiguous · `splunk/enterprise` 1.0 | raw 0.6871 · +bonus → rank 0.8371 · margin 0.5783 | ✅ not resolved (gold: no_match) |
 
 ## Typos
 
-| Input | Matched at | Result | Why | Expected |
+| Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
 | `Crowdstrik Falcon` | B · FuzzyAlias | resolved `crowdstrike/falcon` · 0.948 | raw 0.948 · margin 0.4678 | ✅ |
+| `Crowdstrike Falcn` (rank above 1, confidence stays raw) | B · FuzzyAlias | resolved `crowdstrike/falcon` · 0.904 | raw 0.904 · +bonus → rank 1.054 · margin 0.6698 | ✅ |
 
 ## Paraphrases (semantic layer)
 
-| Input | Matched at | Result | Why | Expected |
+| Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
 | `Amazon Kubernetes` | A · ExactAlias | resolved `aws/eks` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
 | `Amazon managed k8` | B · ExactAlias | resolved `aws/eks` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
@@ -84,24 +85,24 @@ Regenerate with `make examples`. Interactive version with full traces: guide ›
 
 ## Normalization retries
 
-| Input | Matched at | Result | Why | Expected |
+| Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
 | `Log4j 2` | A · ExactAlias | resolved `apache/log4j` · 0.97 | raw 0.97 · margin 0.97 | ✅ |
-| `MS` | B · FuzzyAlias | ambiguous · `microsoft/windows` 0.2035, `microsoft/windows_server` 0.2035, `microsoft/azure` 0.2017 | raw 0.4442 · +bonus → 0.5942 · margin 0.0 | ✅ |
+| `MS` | B · FuzzyAlias | ambiguous · `microsoft/windows` 0.2035, `microsoft/windows_server` 0.2035, `microsoft/azure` 0.2017 | raw 0.4442 · +bonus → rank 0.5942 · margin 0.0 | ✅ |
 | `Share Point` | A · JoinedWords | resolved `microsoft/sharepoint` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
 | `Windows 10` | A · WithoutNumbers | resolved `microsoft/windows` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
 
 ## Hints and filters
 
-| Input | Matched at | Result | Why | Expected |
+| Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
-| `Falcon` (category=edr) | A · ExactAlias | resolved `crowdstrike/falcon` · 0.8 | raw 0.8 · +bonus → 0.95 · margin 0.15 | ✅ |
-| `Sentinel` (vendor=microsoft) | A · ExactAlias | resolved `microsoft/sentinel` · 0.8 | raw 0.8 · +bonus → 0.95 · margin 0.15 | ✅ |
+| `Falcon` (category=edr) | A · ExactAlias | resolved `crowdstrike/falcon` · 0.8 | raw 0.8 · +bonus → rank 0.95 · margin 0.15 | ✅ |
+| `Sentinel` (vendor=microsoft) | A · ExactAlias | resolved `microsoft/sentinel` · 0.8 | raw 0.8 · +bonus → rank 0.95 · margin 0.15 | ✅ |
 | `Sentinel` (filter vendors=hashicorp) | A · ExactAlias | resolved `hashicorp/sentinel` · 0.8 | raw 0.8 · margin 0.8 | ✅ |
 
 ## Unknown names
 
-| Input | Matched at | Result | Why | Expected |
+| Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
 | `Acme Widget Pro` | — | no_match | nothing matched | ✅ |
 | `AWS Foo` | — | no_match | nothing matched | ✅ |
@@ -109,9 +110,9 @@ Regenerate with `make examples`. Interactive version with full traces: guide ›
 
 ## Known limits
 
-| Input | Matched at | Result | Why | Expected |
+| Input | Matched at | Final answer | Why | Expected |
 |---|---|---|---|---|
-| `AWS EKS cluster` (G-05: an extra generic word) | B · FuzzyAlias | ambiguous · `aws/eks` 1.0 | raw 0.5578 · +bonus → 0.7078 · margin 0.7078 | gap · want resolved `aws/eks` |
+| `AWS EKS cluster` (G-05: an extra generic word) | B · FuzzyAlias | ambiguous · `aws/eks` 1.0 | raw 0.5578 · +bonus → rank 0.7078 · margin 0.7078 | gap · want resolved `aws/eks` |
 | `Crwdstrk Falcon` (more than 2 letters wrong) | B · FuzzyAlias | no_match | raw 0.4226 · margin 0.0 | gap · want resolved `crowdstrike/falcon` |
 | `RedHat` (joined word, split not handled) | — | no_match | nothing matched | gap · want resolved `redhat/enterprise_linux` |
 
@@ -126,6 +127,7 @@ Normalized: `amazon eks`
 - **A · ExactAlias** on `amazon eks` → hit
   - alias `amazon eks` → `aws/eks` (generated, base 0.9)
 - **Decide:** top `aws/eks` raw 0.9 (≥ 0.75: yes), margin 0.9 (≥ 0.15: yes) → resolved `aws/eks` · 0.9
+- **Final answer:** resolved → aws/eks (AWS EKS), confidence 0.9. Confidence = raw 0.9 after calibration, capped at 1.0.
 
 ### Near-collisions: `Azure Sentinel`
 
@@ -134,6 +136,7 @@ Normalized: `azure sentinel`
 - **A · ExactAlias** on `azure sentinel` → hit
   - alias `azure sentinel` → `microsoft/sentinel` (strong, base 0.97)
 - **Decide:** top `microsoft/sentinel` raw 0.97 (≥ 0.75: yes), margin 0.97 (≥ 0.15: yes) → resolved `microsoft/sentinel` · 0.97
+- **Final answer:** resolved → microsoft/sentinel (Microsoft Sentinel), confidence 0.97. Confidence = raw 0.97 after calibration, capped at 1.0.
 
 ### Hard negatives: `Amazon Prime`
 
@@ -149,6 +152,7 @@ Normalized: `amazon prime`
 - **B · FuzzyAlias** on `amazon prime` → hit
   - `paloaltonetworks/prisma_cloud` via `prisma cloud`: common prisma 5.2807 = 3.1684 / union 11.1778 = raw 0.2835
 - **Decide:** top `paloaltonetworks/prisma_cloud` raw 0.2835 (≥ 0.75: no), margin 0.2835 (≥ 0.15: yes) → no_match
+- **Final answer:** no_match → confidence 0.0; the input goes to the review queue. Top rank 0.2835 is below t_low.
 
 ### Typos: `Crowdstrik Falcon`
 
@@ -166,6 +170,7 @@ Normalized: `crowdstrik falcon`
   - `falconry/falcon` via `falcon`: common falcon 4.8777 = 4.8777 / union 10.1584 = raw 0.4802
   - `crowdstrike/*` via `crowdstrike`: common crowdstrike 5.2807 = 4.7526 / union 10.1584 = raw 0.4678
 - **Decide:** top `crowdstrike/falcon` raw 0.948 (≥ 0.75: yes), margin 0.4678 (≥ 0.15: yes) → resolved `crowdstrike/falcon` · 0.948
+- **Final answer:** resolved → crowdstrike/falcon (CrowdStrike Falcon), confidence 0.948. Confidence = raw 0.948 after calibration, capped at 1.0.
 
 ### Paraphrases (semantic layer): `managed kubernetes`
 
@@ -183,6 +188,7 @@ Normalized: `managed kubernetes`
   - `google/kubernetes_engine` via `google managed kubernetes`: common kubernetes 3.7414 + managed 4.372 = 8.1134 / union 11.8048 = raw 0.6873
   - `kubernetes/kubernetes` via `kubernetes`: common kubernetes 3.7414 = 3.7414 / union 8.1134 = raw 0.4611
 - **Decide:** top `aws/eks` raw 0.7673 (≥ 0.75: yes), margin 0.08 (≥ 0.15: no) → ambiguous · `aws/eks` 0.5275, `google/kubernetes_engine` 0.4725
+- **Final answer:** ambiguous → the caller picks one of: aws/eks 0.5275, google/kubernetes_engine 0.4725; confidence 0.7673. Confidence = top rank 0.7673 after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks.
 
 ### Normalization retries: `MS`
 
@@ -200,6 +206,7 @@ Normalized: `ms`
   - `microsoft/windows_server` via `ms os`: common ms 2.6892 = 2.6892 / union 6.054 = raw 0.4442
   - `microsoft/azure` via `ms cloud`: common ms 2.6892 = 2.6892 / union 6.1256 = raw 0.439
 - **Decide:** top `microsoft/windows` raw 0.4442 (≥ 0.75: no), margin 0.0 (≥ 0.15: no) → ambiguous · `microsoft/windows` 0.2035, `microsoft/windows_server` 0.2035, `microsoft/azure` 0.2017
+- **Final answer:** ambiguous → the caller picks one of: microsoft/windows 0.2035, microsoft/windows_server 0.2035, microsoft/azure 0.2017, microsoft/sql_server 0.2017, microsoft/exchange_server 0.1896; confidence 0.5942. Confidence = top rank 0.5942 (raw 0.4442 + bonus) after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks.
 
 ### Hints and filters: `Falcon` (category=edr)
 
@@ -209,6 +216,7 @@ Normalized: `falcon`
   - alias `falcon` → `crowdstrike/falcon` (weak, base 0.8)
   - alias `falcon` → `falconry/falcon` (weak, base 0.8)
 - **Decide:** top `crowdstrike/falcon` raw 0.8 (≥ 0.75: yes), margin 0.15 (≥ 0.15: yes) → resolved `crowdstrike/falcon` · 0.8
+- **Final answer:** resolved → crowdstrike/falcon (CrowdStrike Falcon), confidence 0.8. Confidence = raw 0.8 after calibration, capped at 1.0; rank 0.95 = raw 0.8 + bonus only ordered the candidates.
 
 ### Unknown names: `Acme Widget Pro`
 
@@ -237,3 +245,4 @@ Normalized: `aws eks cluster`
 - **B · FuzzyAlias** on `aws eks cluster` → hit
   - `aws/eks` via `aws eks`: common aws 3.1233 + eks 5.2807 = 8.404 / union 15.0671 = raw 0.5578
 - **Decide:** top `aws/eks` raw 0.5578 (≥ 0.75: no), margin 0.7078 (≥ 0.15: yes) → ambiguous · `aws/eks` 1.0
+- **Final answer:** ambiguous → the caller picks one of: aws/eks 1.0; confidence 0.7078. Confidence = top rank 0.7078 (raw 0.5578 + bonus) after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks.

@@ -51,6 +51,7 @@ DEMOS = (
     Case("Sentinel", "hints-filters", "resolved", "microsoft/sentinel", hints=Hints(vendor="Microsoft")),
     Case("Falcon", "hints-filters", "resolved", "crowdstrike/falcon", hints=Hints(category="edr")),
     Case("Sentinel", "hints-filters", "resolved", "hashicorp/sentinel", filters=Filters(vendors=("hashicorp",))),
+    Case("Crowdstrike Falcn", "typo", "resolved", "crowdstrike/falcon", note="rank above 1, confidence stays raw"),
     Case("Windows 10", "normalization", "resolved", "microsoft/windows"),
     Case("Log4j 2", "normalization", "resolved", "apache/log4j"),
     Case("Share Point", "normalization", "resolved", "microsoft/sharepoint"),
@@ -69,7 +70,7 @@ def _round(value: float) -> float:
 
 def _candidates(hits: Scored) -> list[Json]:
     ranked = sorted(hits, key=lambda item: (-item[0], item[2]))[:MAX_ALTERNATIVES]
-    return [{"entity": e, "raw": _round(raw), "bonus": _round(score - raw), "score": _round(score)} for score, raw, e in ranked]
+    return [{"entity": e, "raw": _round(raw), "bonus": _round(score - raw), "rank": _round(score)} for score, raw, e in ranked]
 
 
 def _step(stage: str, name: str, text: str, outcome: str, detail: Json | None = None) -> Json:
@@ -95,14 +96,16 @@ class Tracer:
         steps, hits, winner = self._run_steps(query)
         result = self.resolver.resolve(case.input, hints=case.hints, filters=case.filters)
         rewritten = self.rewriter.rewrite(query.text)
+        decision = self._decision(hits)
+        answer = {"status": result.status.value, "id": result.id, "canonical_name": result.canonical_name,
+                  "confidence": result.confidence,
+                  "alternatives": [{"id": a.id, "share": a.confidence} for a in result.alternatives]}
         return {
             "normalized": query.text, "rewritten": rewritten if rewritten != query.text else None,
             "hints": {key: value for key, value in hints.model_dump().items() if value},
             "filters": {"vendors": list(query.filters.vendors)} if case.filters else {},
-            "steps": steps, "winner": winner, "decision": self._decision(hits),
-            "result": {"status": result.status.value, "id": result.id, "canonical_name": result.canonical_name,
-                       "confidence": result.confidence,
-                       "alternatives": [{"id": a.id, "share": a.confidence} for a in result.alternatives]},
+            "steps": steps, "winner": winner, "decision": decision, "result": answer,
+            "final": {"answer": _answer(answer), "why": _why_confidence(answer, decision)},
         }
 
     def _plan(self, query: Query) -> list[tuple[str, str, Query]]:
@@ -190,10 +193,31 @@ class Tracer:
         top_score, top_raw, top_id = ranked[0]
         margin = top_score - (ranked[1][0] if len(ranked) > 1 else 0.0)
         return {
-            "top": top_id, "top_raw": _round(top_raw), "top_score": _round(top_score), "margin": _round(margin),
-            "second_score": _round(top_score - margin), "margin_passes": margin >= thresholds.margin,
+            "top": top_id, "top_raw": _round(top_raw), "top_rank": _round(top_score), "margin": _round(margin),
+            "second_rank": _round(top_score - margin), "margin_passes": margin >= thresholds.margin,
             "raw_passes": top_raw >= thresholds.t_high, "above_t_low": top_score >= thresholds.t_low,
         }
+
+
+def _answer(result: Json) -> str:
+    if result["status"] == "resolved":
+        return f"resolved → {result['id']} ({result['canonical_name']}), confidence {result['confidence']}"
+    if result["status"] == "ambiguous":
+        options = ", ".join(f"{a['id']} {a['share']}" for a in result["alternatives"])
+        return f"ambiguous → the caller picks one of: {options}; confidence {result['confidence']}"
+    return "no_match → confidence 0.0; the input goes to the review queue"
+
+
+def _why_confidence(result: Json, decision: Json) -> str:
+    if result["status"] == "no_match":
+        return "no step found a candidate" if "rule" in decision else f"top rank {decision['top_rank']} is below t_low"
+    raw, rank = decision["top_raw"], decision["top_rank"]
+    lifted = rank != raw
+    if result["status"] == "resolved":
+        ordered = f"; rank {rank} = raw {raw} + bonus only ordered the candidates" if lifted else ""
+        return f"confidence = raw {raw} after calibration, capped at 1.0{ordered}"
+    split = f" (raw {raw} + bonus)" if lifted else ""
+    return f"confidence = top rank {rank}{split} after calibration, capped at 1.0; shares = each rank ÷ sum of shown ranks"
 
 
 def _without_numbers(text: str) -> str | None:
@@ -242,7 +266,7 @@ def _result_text(result: Json) -> str:
 def _why(decision: Json) -> str:
     if "rule" in decision:
         return "nothing matched"
-    bonus = f" · +bonus → {decision['top_score']}" if decision["top_score"] != decision["top_raw"] else ""
+    bonus = f" · +bonus → rank {decision['top_rank']}" if decision["top_rank"] != decision["top_raw"] else ""
     return f"raw {decision['top_raw']}{bonus} · margin {decision['margin']}"
 
 
@@ -272,7 +296,7 @@ def _md_row(case: Json) -> str:
 
 def _md_table(kind: str, group: list[Json]) -> list[str]:
     rows = [_md_row(case) for case in group]
-    return [f"## {KIND_TITLES[kind]}", "", "| Input | Matched at | Result | Why | Expected |", "|---|---|---|---|---|", *rows, ""]
+    return [f"## {KIND_TITLES[kind]}", "", "| Input | Matched at | Final answer | Why | Expected |", "|---|---|---|---|---|", *rows, ""]
 
 
 def _md_step(step: Json) -> list[str]:
@@ -294,7 +318,7 @@ def _md_decide(case: Json, tables: Tables) -> str:
     d, th = case["decision"], tables.thresholds
     raw = f"raw {d['top_raw']} (≥ {th.t_high}: {_check(d['raw_passes'])})"
     margin = f"margin {d['margin']} (≥ {th.margin}: {_check(d['margin_passes'])})"
-    return f"- **Decide:** top `{d['top']}` {raw}, {margin} → {_result_text(case['result'])}"
+    return f"- **Decide:** top `{d['top']}` {raw}, {margin} → {_result_text(case['result'])}\n- **Final answer:** {case['final']['answer']}. {case['final']['why'].capitalize()}."
 
 
 def _md_trace(case: Json, tables: Tables) -> list[str]:
