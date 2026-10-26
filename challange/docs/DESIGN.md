@@ -16,14 +16,14 @@ Output: `Resolution{id, canonical_name, vendor, category, confidence, status, al
 | Topic | Decision | Trade-off |
 |---|---|---|
 | Precision vs recall | Precision first; initial base by match type canonical 1.0 > manual 0.97 > generated 0.9 > weak-unique 0.8 > fuzzy = score (D-14, D-27) | Some true variants return `ambiguous` / `no_match` |
-| Decision rule | `resolved` iff raw `s1 ≥ T_high (0.75)` and `margin ≥ M (0.15)`; `ambiguous` iff `s1 ≥ T_low (0.5)`; else `no_match`. Hints (caller or vendor found in the input) add a bonus that ranks and widens the margin, never lifts the raw score (D-22, D-28, D-48) | "Splunk Enterprise Security" → `ambiguous`, not Splunk Enterprise |
+| Decision rule | `resolved` iff raw `s1 ≥ T_high (0.75)` and `margin ≥ M (0.15)`; `ambiguous` iff raw `s1 ≥ T_low (0.5)`; else `no_match`. Candidates with raw < T_low are dropped before ranking. Hints (caller or vendor found in the input) add a bonus that only orders candidates and widens the margin; it never counts toward a threshold or the confidence (D-22, D-28, D-48, D-51) | "Splunk Enterprise Security" → `ambiguous` at raw 0.69, not Splunk Enterprise; bare `MS` → `no_match` |
 | Ambiguity | Product-only and ≤ 3-char aliases are weak; a weak alias on > 1 entity returns `ambiguous` + alternatives (`Sentinel`). `ambiguous` = candidates above `T_low`, none passes the rule; an alternative's confidence is its share of the shown evidence, so one alternative shows 1.0 (D-09, D-19, D-29) | Callers handle a third status |
-| Normalization | Dotted or `v`-prefixed versions dropped (`2.14.1`, `v7`); bare integers kept. On an exact miss: retry with adjacent words joined (`Sentinel One`), then without integers for products only, capped at weak (`Windows 10`; `Microsoft 365` ≠ Microsoft) | Joined → split (`RedHat`) not handled |
+| Normalization | Dotted or `v`-prefixed versions dropped (`2.14.1`, `v7`); bare integers kept. On an exact miss: retry with adjacent words joined (`Sentinel One`), then split at inner capitals (`RedHat` → `red hat`, `BigIP`), then without integers for products only, capped at weak (`Windows 10`; `Microsoft 365` ≠ Microsoft). Case is read before casefold for that split and for acronyms (D-50) | Lowercase `redhat` has no capitals to split |
 | Hierarchy | Canonical vendor = operating brand, `parent_vendor_id` is metadata; `Amazon ≠ AWS`, `AWS ≠ AWS EKS` (D-10, D-11, D-32) | Build emits parent × product aliases; no runtime tree walk (D-44) |
-| Typos | Trigram candidates + Levenshtein ≤ 2; ≤ 3 chars exact only (D-26) | Misses heavier misspellings |
+| Typos | Trigram candidates + Levenshtein ≤ 2; ≤ 3 chars and ALL-CAPS words exact only, so `PAAS` never becomes `saas` (D-26, D-50) | Misses heavier misspellings |
 | Unknowns | `no_match`, confidence 0, queued for review; runtime never mints ids (D-47, assumption [CONFIRM]) | Coverage grows only via review |
 | Update strategy | Source files in git, PR = review, idempotent upserts with provenance; build → validate → eval gate → atomic snapshot swap (D-12, D-13, D-36) | A rebuild per change |
-| Idempotency | `index_version` = content hash; ledger key = `(input, hints, filters, index_version)`; tie-break `(score desc, entity_id asc)` (D-16, D-22, D-31) | Ledger grows with traffic |
+| Idempotency | `index_version` = content hash; ledger key = `(input, case signals, hints, filters, index_version)`; tie-break `(score desc, entity_id asc)` (D-16, D-22, D-31) | Ledger grows with traffic |
 
 ## Data structures
 
@@ -62,9 +62,10 @@ Concept-only input (`managed kubernetes`) returns `ambiguous` (EKS, GKE).
 
 - **Gold set:** 49 hand cases (incl. 6 paraphrase, 14 hard-negative) + leave-one-out over aliases + synthetic typos in code; 300–500 hand-labeled in production (D-38).
 A test guards that no hard negative resolves to a wrong id.
-- **Metrics (`make eval`):** precision on resolved (gate ≥ 0.98), coverage (target ≥ 0.90), F1, ambiguous rate, p50 / p99 latency, cost per 1M, threshold sweep, 10-bin reliability table + ECE (D-38, D-40).
+- **Metrics (`make eval`):** precision on resolved (gate ≥ 0.98), coverage (target ≥ 0.90), F1, ambiguous rate, p50 / p99 latency, cost per 1M, threshold sweep, 10-bin reliability table + ECE (D-38, D-40), alias budget: coverage lost per alias source and coverage vs aliases per entity.
 The gate checks precision only; coverage is reported against its target, not gated.
-- **Measured (seed + V4, 26-10-26):** 178 entities, 802 aliases, 195 cases: precision 1.00, coverage 0.79 (leave-one-out misses fall to `no_match` / `ambiguous`), p50 0.04 ms, p99 0.28 ms.
+- **Measured (seed + V4, 26-10-26):** 178 entities, 802 aliases, 195 cases: precision 1.00, coverage 0.79 (leave-one-out misses fall to `no_match` / `ambiguous`), ambiguous rate 0.12, p50 0.04 ms, p99 0.28 ms.
+- **Alias budget (26-10-26):** `ConceptCombos` holds 301 alias keys for 2.7 coverage points, `CuratedAliases` 36 keys for 2.7 points. Keeping 0 → 100 % of non-canonical aliases (0.9 → 4.6 per entity) lifts coverage 0.86 → 0.99 with no plateau yet; the cases come from our own data, so a real report sample is the next denominator.
 - **Calibration:** bins frozen in the snapshot; fit on the hand-labeled dev set, since leave-one-out inflates precision (D-40).
 - **Production:** regression gate in CI; health SLOs unresolved < 5 %, ambiguous < 3 %, tier-1 precision ≥ 99 % [CONFIRM] (D-25, D-39).
 - **Stubbed:** durable ledger, review queue, monitoring, plugins, real-time overlay (D-30, D-43).
