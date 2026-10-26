@@ -1,9 +1,14 @@
 import json
+import random
 import time
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
+from statistics import mean
 
-from src.tables import Tables
+from src.alias_sources import DEFAULT_ALIAS_SOURCES, AliasSource, Records
+from src.build import build_tables
+from src.tables import AliasTriple, Tables
 from src.constants import (
     CALIBRATION_BINS,
     CONFIDENCE_DECIMALS,
@@ -24,6 +29,8 @@ P50, P99 = 0.50, 0.99
 REQUESTS_PER_MILLION = 1_000_000
 VCPU_USD_PER_SECOND = 0.04 / 3600
 SWEEP_T_HIGH = (0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95)
+CURVE_FRACTIONS = (0.0, 0.25, 0.5, 0.75, 1.0)
+CURVE_SEEDS = 5
 
 # Offline-evaluation stub (D-38, D-40): in production the gold set is 300-500 hand-labeled cases
 # split dev / test; the calibration bins are fitted on dev, the regression gate runs in CI on every
@@ -161,3 +168,46 @@ def evaluate(sources: Sources, tables: Tables) -> dict[str, object]:
         "ece": ece,
         "misses": [o.case.input for o in outcomes if not is_correct(o)],
     }
+
+
+class SampledAliases:
+    def __init__(self, fraction: float, seed: int, inner: Sequence[AliasSource] = DEFAULT_ALIAS_SOURCES) -> None:
+        self.fraction, self.seed, self.inner = fraction, seed, inner
+
+    def aliases(self, sources: Sources, records: Records) -> Iterator[AliasTriple]:
+        rng = random.Random(self.seed)
+        for source in self.inner:
+            for alias, entity_id, strength in source.aliases(sources, records):
+                if strength is Strength.CANONICAL or rng.random() < self.fraction:
+                    yield alias, entity_id, strength
+
+
+def alias_budget(sources: Sources, tables: Tables) -> dict[str, object]:
+    return {"ablation": source_ablation(sources, tables), "curve": alias_curve(sources, tables)}
+
+
+def source_ablation(sources: Sources, tables: Tables) -> list[dict[str, object]]:
+    cases = build_gold_set(sources, tables)
+    base = quality(run_cases(tables, cases))["coverage"]
+    rows: list[dict[str, object]] = []
+    for source in DEFAULT_ALIAS_SOURCES:
+        ablated = build_tables(sources, alias_sources=tuple(s for s in DEFAULT_ALIAS_SOURCES if s is not source))
+        metrics = quality(run_cases(ablated, cases))
+        rows.append({"source": type(source).__name__, "alias_keys_lost": len(tables.aliases) - len(ablated.aliases),
+                     "coverage_lost": round(base - metrics["coverage"], CONFIDENCE_DECIMALS),
+                     "precision_on_resolved": metrics["precision_on_resolved"]})
+    return rows
+
+
+def alias_curve(sources: Sources, tables: Tables) -> list[dict[str, float]]:
+    cases = [*load_hand_cases(DATA_DIR / "gold.jsonl"), *typo_cases(tables)]
+    return [_curve_point(sources, cases, fraction) for fraction in CURVE_FRACTIONS]
+
+
+def _curve_point(sources: Sources, cases: list[GoldCase], fraction: float) -> dict[str, float]:
+    runs = [build_tables(sources, alias_sources=(SampledAliases(fraction, seed),)) for seed in range(CURVE_SEEDS)]
+    metrics = [quality(run_cases(sampled, cases)) for sampled in runs]
+    per_entity = mean(sum(map(len, sampled.aliases.values())) / len(sampled.entities) for sampled in runs)
+    return {"fraction": fraction, "aliases_per_entity": round(per_entity, CONFIDENCE_DECIMALS),
+            "coverage": round(mean(m["coverage"] for m in metrics), CONFIDENCE_DECIMALS),
+            "precision_on_resolved": round(mean(m["precision_on_resolved"] for m in metrics), CONFIDENCE_DECIMALS)}

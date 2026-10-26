@@ -4,7 +4,8 @@ import pytest
 
 from src.cli import main
 from src.constants import DATA_DIR, Status
-from src.eval import build_gold_set, evaluate, load_hand_cases, without_alias
+from src.alias_sources import DEFAULT_ALIAS_SOURCES
+from src.eval import alias_budget, build_gold_set, evaluate, load_hand_cases, without_alias
 from src.models import load_sources
 from src.resolver import Resolver
 from src.tables import Tables
@@ -18,6 +19,11 @@ REPORT_KEYS = {"coverage", "f1", "ambiguous_rate", "p50_ms", "p99_ms", "cost_per
 @pytest.fixture(scope="module")
 def report(tables: Tables) -> dict[str, object]:
     return evaluate(load_sources(DATA_DIR), tables)
+
+
+@pytest.fixture(scope="module")
+def budget(tables: Tables) -> dict[str, object]:
+    return alias_budget(load_sources(DATA_DIR), tables)
 
 
 def test_gold_set_size(tables: Tables) -> None:
@@ -50,6 +56,19 @@ def test_without_alias_removes_it_everywhere(tables: Tables) -> None:
     assert all("azure sentinel" not in found for found in reduced.postings.values())
 
 
+def test_alias_budget_drops_each_source_once(budget: dict[str, object]) -> None:
+    ablation = budget["ablation"]
+    assert [row["source"] for row in ablation] == [type(source).__name__ for source in DEFAULT_ALIAS_SOURCES]
+    assert all(row["alias_keys_lost"] > 0 for row in ablation)
+
+
+def test_alias_curve_grows_coverage_with_aliases_per_entity(budget: dict[str, object]) -> None:
+    curve = budget["curve"]
+    assert curve[-1]["aliases_per_entity"] > curve[0]["aliases_per_entity"]
+    assert curve[-1]["coverage"] >= curve[0]["coverage"]
+
+
 def test_cli_eval_prints_report(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["eval"]) == 0
-    assert json.loads(capsys.readouterr().out)["gate_passed"] is True
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["gate_passed"] is True and {"ablation", "curve"} <= printed["alias_budget"].keys()

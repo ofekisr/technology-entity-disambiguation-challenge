@@ -8,7 +8,7 @@ from pathlib import Path
 
 from src.build import build_tables, validate
 from src.constants import DATA_DIR, RSS_DECIMALS
-from src.eval import evaluate
+from src.eval import alias_budget, evaluate
 from src.models import AliasRow, Filters, Hints, load_sources
 from src.normalize import normalize
 from src.resolver import Resolver, snapshot_path
@@ -48,7 +48,8 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
 def cmd_eval(args: argparse.Namespace) -> int:
     sources = load_sources(args.data_dir)
-    report = evaluate(sources, build_tables(sources))
+    tables = build_tables(sources)
+    report = {**evaluate(sources, tables), "alias_budget": alias_budget(sources, tables)}
     print(json.dumps(report, indent=2))
     return OK if report["gate_passed"] else FAILED
 
