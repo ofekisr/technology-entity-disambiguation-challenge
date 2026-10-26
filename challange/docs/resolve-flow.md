@@ -10,8 +10,8 @@ flowchart TD
     CACHE -->|yes| OUT
     CACHE -->|no| EXACT{"A · input as typed<br/>exact alias → joined words → CamelCase split → without numbers (products only)"}
     EXACT -->|hit| BASE["Base by match type (D-27)<br/>canonical 1.0 · manual 0.97 · generated 0.9 · weak 0.8<br/>+ hint bonus for ranking (D-29)"]
-    EXACT -->|miss| SYN["B · SynonymRewrite (D-49)<br/>unknown words → concept: k8 → kubernetes"]
-    SYN --> EXACT2{"exact steps again on rewritten text<br/>concept aliases live here (ConceptCombos)"}
+    EXACT -->|miss| SYN["B · SynonymRewrite (D-49)<br/>unknown words → concept: k8 → kubernetes<br/>hits after a rewrite cap at weak 0.8 (D-52)"]
+    SYN --> EXACT2{"exact steps again on rewritten text<br/>concept aliases live here (ConceptCombos)<br/>edge weight 1.0 → generated 0.9, lower → weak 0.8 (D-52)"}
     EXACT2 -->|hit| BASE
     EXACT2 -->|miss| DEC["Decompose: vendor longest-prefix<br/>vendor = inferred hint, residue must match (D-19, D-44)"]
     DEC --> CAND["Candidate retrieval (D-20, D-26)<br/>postings of input tokens;<br/>typo: trigram vocab + Levenshtein ≤ 2, tokens > 3 chars, never ALL-CAPS"]
